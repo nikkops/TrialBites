@@ -1,0 +1,132 @@
+/* ===== Two-column layout: sidebar + page ===== */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+/* Logo + name, clickable back to the dashboard */
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 2px;
+  margin-bottom: 24px;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.sidebar__brand:hover {
+  background: transparent;
+}
+
+.sidebar__logo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.sidebar__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Nav buttons (reset the global button style) */
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.sidebar__link:hover {
+  background: var(--bg);
+}
+
+.sidebar__link.is-active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* Pushes Help & Documentation to the bottom */
+.sidebar__help {
+  margin-top: auto;
+}
+
+/* ===== Page area ===== */
+.main-content {
+  flex: 1;
+  min-width: 0; /* lets wide tables shrink instead of overflowing */
+  padding: 40px 40px 56px;
+}
+
+/* ===== Small screens: sidebar becomes a top bar ===== */
+@media (max-width: 860px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    width: 100%;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar__brand {
+    margin-bottom: 12px;
+  }
+
+  .sidebar__nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .sidebar__link {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .sidebar__help {
+    display: none;
+  }
+
+  .main-content {
+    padding: 24px 16px 40px;
+  }
+}

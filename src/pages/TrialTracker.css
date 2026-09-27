@@ -1,0 +1,288 @@
+/* ===== Page wrapper ===== */
+.tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+}
+
+/* "← Back to Dashboard" */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-bottom: -12px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.back-link:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+/* ===== Two columns: main content + verdict card ===== */
+.tracker__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+.tracker__main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tracker__panel {
+  padding: 24px;
+}
+
+.tracker__panel h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.tracker__muted {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ===== Trial facts strip ===== */
+.trial-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  padding: 20px;
+}
+
+.trial-facts__value {
+  margin-top: 2px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+/* ===== Log form ===== */
+.log-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.field__label {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.field__input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 14px;
+  resize: vertical;
+}
+
+.field__input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.field__input::placeholder {
+  color: #a0aab8;
+}
+
+/* Severity picker (None / Mild / Moderate / Severe) */
+.severity-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.severity-option {
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.severity-option.is-selected {
+  background: var(--surface);
+}
+
+.severity-option--none.is-selected {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.severity-option--mild.is-selected {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.severity-option--moderate.is-selected,
+.severity-option--severe.is-selected {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.log-form__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.log-form__hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ===== Timeline ===== */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.timeline__item {
+  display: grid;
+  grid-template-columns: 136px 1fr;
+  gap: 16px;
+}
+
+.timeline__day {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.timeline__title {
+  font-weight: 500;
+}
+
+.timeline__title--success {
+  color: var(--success);
+}
+
+.timeline__title--warning {
+  color: var(--warning);
+}
+
+.timeline__title--danger {
+  color: var(--danger);
+}
+
+.timeline__notes {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ===== Verdict card ===== */
+.verdict {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.verdict h2 {
+  margin-bottom: 0;
+}
+
+.verdict .tracker__muted {
+  margin-bottom: 8px;
+}
+
+.verdict-option {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid;
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+.verdict-option__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.verdict-option__text {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-h);
+}
+
+.verdict-option--safe {
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.verdict-option--unsafe {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.verdict-option--safe:hover {
+  background: #d7f0e3;
+}
+
+.verdict-option--unsafe:hover {
+  background: #fbe3e3;
+}
+
+/* The verdict the trial currently has */
+.verdict-option.is-selected {
+  border-width: 2px;
+  padding: 15px;
+}
+
+.verdict-option.is-selected .verdict-option__title::after {
+  content: ' ✓';
+}
+
+/* ===== Smaller screens ===== */
+@media (max-width: 1000px) {
+  .tracker__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .verdict {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .timeline__item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

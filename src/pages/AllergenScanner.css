@@ -1,0 +1,222 @@
+/* ===== Page wrapper ===== */
+.scanner {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+}
+
+/* Two columns: upload on the left, results on the right */
+.scanner__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.scanner__main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===== Upload card ===== */
+.upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.upload__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 24px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.upload__preview {
+  max-height: 180px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  object-fit: contain;
+}
+
+.upload h2 {
+  font-size: 17px;
+}
+
+.upload__text {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.upload__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* White button with a gray border ("Browse Files") */
+.btn-bordered {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+/* Keeps the file input usable but invisible */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ===== Info card ===== */
+.scanner-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+  font-size: 13px;
+}
+
+.scanner-info__icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.scanner-info__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* ===== Results card ===== */
+.results {
+  padding: 24px;
+}
+
+.results h2 {
+  font-size: 18px;
+}
+
+.results__subtitle {
+  margin-top: 2px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.results__alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.results__alert--danger {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.results__alert--safe {
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.results__heading {
+  margin: 24px 0 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.results__empty {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.results__error {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: #8a6a0c;
+}
+
+.watch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ===== Ingredient matches ===== */
+.matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.match {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.match__name {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.match__synonym {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ===== Disclaimer ===== */
+.disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.disclaimer svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ===== Smaller screens ===== */
+@media (max-width: 1000px) {
+  .scanner__layout {
+    grid-template-columns: 1fr;
+  }
+}

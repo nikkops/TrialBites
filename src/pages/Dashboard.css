@@ -1,0 +1,179 @@
+/* ===== Page wrapper ===== */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 1100px;
+}
+
+/* ===== Stat cards ===== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.stat-card {
+  padding: 22px 20px;
+}
+
+.stat-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-card__icon--info {
+  color: var(--accent);
+}
+
+.stat-card__icon--danger {
+  color: var(--danger);
+}
+
+.stat-card__icon--success {
+  color: var(--success);
+}
+
+.stat-card__value {
+  margin: 14px 0 16px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.stat-card__note {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ===== Section headings ===== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin-bottom: 20px;
+}
+
+/* ===== Active trial cards ===== */
+.trial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trial-card {
+  padding: 24px;
+}
+
+.trial-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.trial-card__meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.trial-card__summary {
+  margin: 20px 0;
+  font-size: 14px;
+}
+
+.trial-card__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== Activity feed table ===== */
+.activity {
+  padding: 8px 20px 12px;
+  overflow-x: auto;
+}
+
+.activity__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.activity__table th {
+  padding: 14px 0 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.activity__table td {
+  padding: 12px 0;
+  vertical-align: middle;
+}
+
+/* Last column (status) sits on the right like the mockup */
+.activity__table th:last-child,
+.activity__table td:last-child {
+  text-align: right;
+}
+
+.activity__date {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.activity__food {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* ===== Empty states ===== */
+.empty-state {
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+/* ===== Allergen alert ===== */
+.allergen-alert {
+  padding: 20px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-lg);
+  background: var(--danger-bg);
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.allergen-alert__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+/* ===== Smaller screens ===== */
+@media (max-width: 1000px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .trial-card__top,
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

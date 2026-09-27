@@ -56,12 +56,19 @@ function App() {
             trial={currentTrial}
             onLogSymptom={handleLogSymptom}
             onUpdateStatus={handleUpdateStatus}
+            onNavigate={setCurrentPage}
           />
         )
       case 'food-log':
-        return <FoodLog trials={trials} />
+        return (
+          <FoodLog
+            trials={trials}
+            onNavigate={setCurrentPage}
+            onSelectTrial={setCurrentTrialId}
+          />
+        )
       case 'scanner':
-        return <AllergenScanner />
+        return <AllergenScanner trials={trials} />
       case 'dashboard':
       default:
         return (

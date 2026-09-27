@@ -1,0 +1,168 @@
+/* ===== Page wrapper ===== */
+.food-log {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+}
+
+/* ===== Search + filter bar ===== */
+.log-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+}
+
+.log-search {
+  position: relative;
+  flex: 0 1 340px;
+  min-width: 220px;
+}
+
+.log-search__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.log-search__input {
+  width: 100%;
+  padding: 9px 14px 9px 42px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.log-search__input::placeholder {
+  color: var(--text-muted);
+}
+
+.log-search__input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.log-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.log-filter {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.log-filter.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* ===== Trial rows ===== */
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.log-item {
+  display: grid;
+  grid-template-columns: 48px minmax(140px, 1fr) minmax(0, 1.6fr) 140px auto;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 24px;
+}
+
+/* Round icon on the left */
+.log-item__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.log-item__icon--safe {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.log-item__icon--unsafe {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.log-item__food h3 {
+  font-size: 17px;
+}
+
+.log-item__dates {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.log-item__summary {
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.log-item__label {
+  margin-bottom: 2px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.log-item__verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.log-item__details {
+  border-color: var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.log-empty {
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+/* ===== Smaller screens ===== */
+@media (max-width: 1000px) {
+  .log-item {
+    grid-template-columns: 48px 1fr auto;
+    gap: 12px 20px;
+  }
+
+  /* Summary and verdict drop to their own rows under the food name */
+  .log-item__summary,
+  .log-item__verdict {
+    grid-column: 2 / -1;
+  }
+
+  .log-item__details {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .log-search {
+    flex: 1 1 100%;
+  }
+}
