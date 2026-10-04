@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import AppShell from './components/AppShell.jsx'
-import { trials as initialTrials } from './data/trials.js'
+import { trials as initialTrials } from './lib/trials.js'
 import AllergenScanner from './pages/AllergenScanner.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import FoodLog from './pages/FoodLog.jsx'
