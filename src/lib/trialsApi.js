@@ -36,7 +36,8 @@ function toTrial(row) {
 
 // Today's date in YOUR timezone as 'YYYY-MM-DD'.
 // The database's current_date uses UTC, which is 8 hours behind Manila.
-function getLocalDate() {
+// Exported so the New Trial form can use it as the default start date.
+export function getLocalDate() {
   const now = new Date()
   return [
     now.getFullYear(),
@@ -74,6 +75,33 @@ export async function fetchTrials() {
   // Step 4: "data" is an array of raw database rows.
   // .map(toTrial) runs toTrial on each row, giving us the shape the pages use.
   return data.map(toTrial)
+}
+
+/**
+ * Start a new food trial.
+ * input: { foodName, startDate } (startDate is 'YYYY-MM-DD')
+ * Returns: the saved trial, shaped by toTrial() (with an empty symptoms array).
+ * Throws: an Error if Supabase returns one.
+ */
+export async function createTrial({ foodName, startDate }) {
+  const { data, error } = await supabase
+    .from('trials')
+    // Step 1: column names, not app names. We leave out:
+    //  - id and created_at: the database makes those
+    //  - status: the table's default is 'active', which is what a new trial is
+    .insert({
+      food_name: foodName,
+      start_date: startDate,
+    })
+    // Step 2: send the saved row back as one object (we need its new id)
+    .select()
+    .single()
+
+  // Step 3: same pattern as the others
+  if (error) throw error
+
+  // Step 4: toTrial turns the missing symptoms into an empty array
+  return toTrial(data)
 }
 
 /**

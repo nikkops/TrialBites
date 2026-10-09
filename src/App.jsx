@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
 import AppShell from './components/AppShell.jsx'
-import { addSymptom, fetchTrials, updateTrialStatus } from './lib/trialsApi.js'
+import NewTrialDialog from './components/NewTrialDialog.jsx'
+import {
+  addSymptom,
+  createTrial,
+  fetchTrials,
+  updateTrialStatus,
+} from './lib/trialsApi.js'
 import AllergenScanner from './pages/AllergenScanner.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import FoodLog from './pages/FoodLog.jsx'
 import TrialTracker from './pages/TrialTracker.jsx'
-import './App.css'
 
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -14,7 +19,8 @@ const navigationItems = [
   { id: 'scanner', label: 'Allergen Scanner' },
 ]
 
-function App() {
+// user and onLogOut come from AuthGate, which only shows App when logged in
+function App({ user, onLogOut }) {
   const [currentPage, setCurrentPage] = useState('dashboard')
   // Starts empty; filled from Supabase when the app opens
   const [trials, setTrials] = useState([])
@@ -29,6 +35,8 @@ function App() {
   const [saveError, setSaveError] = useState('')
   // Changing this number makes the effect below run again ("Try again" button)
   const [reloadKey, setReloadKey] = useState(0)
+  // Whether the "Start New Trial" pop-up is showing
+  const [isNewTrialOpen, setIsNewTrialOpen] = useState(false)
 
   const currentTrial = trials.find((trial) => trial.id === currentTrialId)
 
@@ -61,6 +69,28 @@ function App() {
   function handleRetry() {
     setIsLoading(true)
     setReloadKey((key) => key + 1)
+  }
+
+  // Returns '' if it worked, or an error message for the dialog to show
+  async function handleCreateTrial({ foodName, startDate }) {
+    try {
+      const newTrial = await createTrial({ foodName, startDate })
+
+      // Add it to the list, keeping newest start date first (like fetchTrials)
+      setTrials((currentTrials) =>
+        [newTrial, ...currentTrials].sort((a, b) =>
+          b.startDate.localeCompare(a.startDate),
+        ),
+      )
+
+      // Close the pop-up and open the new trial so they can start logging
+      setIsNewTrialOpen(false)
+      setCurrentTrialId(newTrial.id)
+      setCurrentPage('tracker')
+      return ''
+    } catch (error) {
+      return `Couldn't start the trial: ${error.message}`
+    }
   }
 
   async function handleLogSymptom(trialId, symptom) {
@@ -129,6 +159,7 @@ function App() {
             trials={trials}
             onNavigate={setCurrentPage}
             onSelectTrial={setCurrentTrialId}
+            onStartNewTrial={() => setIsNewTrialOpen(true)}
           />
         )
     }
@@ -177,8 +208,16 @@ function App() {
       currentPage={currentPage}
       navigationItems={navigationItems}
       onNavigate={setCurrentPage}
+      userEmail={user.email}
+      onLogOut={onLogOut}
     >
       {renderContent()}
+
+      <NewTrialDialog
+        isOpen={isNewTrialOpen}
+        onClose={() => setIsNewTrialOpen(false)}
+        onCreate={handleCreateTrial}
+      />
     </AppShell>
   )
 }

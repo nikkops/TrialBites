@@ -70,6 +70,12 @@
   font-size: 15px;
   font-weight: 500;
   text-align: left;
+  white-space: nowrap;
+}
+
+/* Keep icons full size even when the text is long */
+.sidebar__link svg {
+  flex-shrink: 0;
 }
 
 .sidebar__link:hover {
@@ -86,8 +92,39 @@
   margin-top: auto;
 }
 
-.sidebar__link {
+/* Logged-in email + Log out, under Help & Documentation */
+.sidebar__account {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar__email {
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sidebar__logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.sidebar__logout:hover {
+  background: transparent;
+  color: var(--danger);
 }
 
 /* ===== Page area ===== */
@@ -127,6 +164,24 @@
   }
 
   .sidebar__help {
+    display: none;
+  }
+
+  /* On phones: just the Log out button, top right next to the logo */
+  .sidebar {
+    position: relative;
+  }
+
+  .sidebar__account {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .sidebar__email {
     display: none;
   }
 

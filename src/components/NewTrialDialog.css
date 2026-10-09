@@ -1,0 +1,92 @@
+/* The pop-up box */
+.new-trial {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+/* The dimmed page behind it */
+.new-trial::backdrop {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.new-trial__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+}
+
+.new-trial__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.new-trial__header h2 {
+  font-size: 19px;
+}
+
+.new-trial__subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.new-trial__close {
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+/* Fields */
+.new-trial__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.new-trial__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.new-trial__input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.new-trial__input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.new-trial__error {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* Buttons, right-aligned */
+.new-trial__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

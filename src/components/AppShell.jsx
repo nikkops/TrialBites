@@ -3,6 +3,7 @@ import {
   BookOpen,
   CircleHelp,
   LayoutGrid,
+  LogOut,
   ScanLine,
   ShieldAlert,
 } from 'lucide-react'
@@ -16,7 +17,14 @@ const navIcons = {
   scanner: ScanLine,
 }
 
-function AppShell({ currentPage, navigationItems, onNavigate, children }) {
+function AppShell({
+  currentPage,
+  navigationItems,
+  onNavigate,
+  userEmail,
+  onLogOut,
+  children,
+}) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -55,6 +63,21 @@ function AppShell({ currentPage, navigationItems, onNavigate, children }) {
           <CircleHelp size={18} strokeWidth={1.75} />
           Help &amp; Documentation
         </button>
+
+        {/* Who's logged in, and the way out */}
+        <div className="sidebar__account">
+          <span className="sidebar__email" title={userEmail}>
+            {userEmail}
+          </span>
+          <button
+            type="button"
+            className="sidebar__logout"
+            onClick={onLogOut}
+          >
+            <LogOut size={16} strokeWidth={1.75} />
+            Log out
+          </button>
+        </div>
       </aside>
 
       <main className="main-content">{children}</main>

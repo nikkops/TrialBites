@@ -25,7 +25,7 @@ function getTrialSummary(trial) {
 
 /* ===== Page ===== */
 
-function Dashboard({ trials, onNavigate, onSelectTrial }) {
+function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
   const activeTrials = trials.filter((trial) => trial.status === 'active')
   const safeTrials = trials.filter((trial) => trial.status === 'safe')
   const unsafeTrials = trials.filter((trial) => trial.status === 'unsafe')
@@ -117,7 +117,7 @@ function Dashboard({ trials, onNavigate, onSelectTrial }) {
           <button
             type="button"
             className="btn-primary btn-icon"
-            onClick={() => onNavigate('tracker')}
+            onClick={onStartNewTrial}
           >
             <Plus size={16} />
             Start New Trial
@@ -126,7 +126,8 @@ function Dashboard({ trials, onNavigate, onSelectTrial }) {
 
         {activeTrials.length === 0 ? (
           <div className="card empty-state">
-            No active trials yet. Start one to begin tracking.
+            No active trials yet. Use <strong>Start New Trial</strong> to begin
+            tracking a food.
           </div>
         ) : (
           <ul className="trial-list">
