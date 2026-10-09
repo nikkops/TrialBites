@@ -4,17 +4,21 @@ import PageHeader from '../components/PageHeader.jsx'
 import {
   formatDate,
   formatLongDate,
+  formatTime,
   getDayNumber,
   getSeverityBadge,
   getStatusBadge,
   getTrialDay,
   severityLevels,
+  toLocalDateString,
 } from '../utils/trialHelpers.js'
 import './TrialTracker.css'
 
 function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
   const [severityId, setSeverityId] = useState('mild')
   const [notes, setNotes] = useState('')
+  // True while a symptom is being saved (disables the button)
+  const [isSaving, setIsSaving] = useState(false)
 
   const backLink = (
     <button
@@ -40,27 +44,36 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
   }
 
   const isActive = trial.status === 'active'
-  const status = getStatusBadge(trial.status)
+  const status = getStatusBadge(trial)
   const selectedLevel = severityLevels.find((level) => level.id === severityId)
 
-  // Newest entries first
-  const timeline = [...trial.symptoms].sort((a, b) =>
-    b.date.localeCompare(a.date),
+  // Newest entries first: by date, then by the time they were logged
+  const timeline = [...trial.symptoms].sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      (b.loggedAt ?? '').localeCompare(a.loggedAt ?? ''),
   )
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const trimmed = notes.trim()
 
     // Notes are optional only when logging "None"
     if (!trimmed && selectedLevel.id !== 'none') return
 
-    onLogSymptom(trial.id, {
+    setIsSaving(true)
+    // Wait for the save. onLogSymptom returns true if it worked.
+    const saved = await onLogSymptom(trial.id, {
       severity: selectedLevel.value,
       notes: trimmed || 'No symptoms observed.',
     })
-    setNotes('')
-    setSeverityId('mild')
+    setIsSaving(false)
+
+    // Only clear the form if it saved; otherwise keep what was typed
+    if (saved) {
+      setNotes('')
+      setSeverityId('mild')
+    }
   }
 
   return (
@@ -88,7 +101,17 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
               <p className="trial-facts__value">
                 {isActive
                   ? `Day ${getTrialDay(trial.startDate)}`
-                  : `Completed · ${status.label}`}
+                  : trial.completedAt
+                    ? `Completed ${formatDate(toLocalDateString(trial.completedAt))}`
+                    : 'Completed'}
+              </p>
+            </div>
+            <div>
+              <p className="eyebrow">Status</p>
+              <p className="trial-facts__value">
+                <span className={`badge badge--${status.tone}`}>
+                  {status.label}
+                </span>
               </p>
             </div>
             <div>
@@ -101,7 +124,10 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
           </div>
 
           {/* ===== Log a reaction ===== */}
-          <section className="card tracker__panel" aria-labelledby="log-heading">
+          <section
+            className="card tracker__panel"
+            aria-labelledby="log-heading"
+          >
             <h2 id="log-heading">Log a Reaction / Observation</h2>
 
             <form className="log-form" onSubmit={handleSubmit}>
@@ -141,8 +167,12 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
                 <p className="log-form__hint">
                   Entries are added to this trial's timeline below.
                 </p>
-                <button type="submit" className="btn-primary">
-                  Record Log Entry
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving…' : 'Record Log Entry'}
                 </button>
               </div>
             </form>
@@ -156,17 +186,26 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
             <h2 id="timeline-heading">Trial Timeline Entries</h2>
 
             {timeline.length === 0 ? (
-              <p className="tracker__muted">No entries logged for this trial.</p>
+              <p className="tracker__muted">
+                No entries logged for this trial.
+              </p>
             ) : (
               <ol className="timeline">
                 {timeline.map((symptom) => {
                   const severity = getSeverityBadge(symptom.severity)
                   return (
                     <li key={symptom.id} className="timeline__item">
-                      <p className="timeline__day">
-                        Day {getDayNumber(trial.startDate, symptom.date)} (
-                        {formatDate(symptom.date)})
-                      </p>
+                      <div>
+                        <p className="timeline__day">
+                          Day {getDayNumber(trial.startDate, symptom.date)} (
+                          {formatDate(symptom.date)})
+                        </p>
+                        {symptom.loggedAt && (
+                          <p className="timeline__time">
+                            {formatTime(symptom.loggedAt)}
+                          </p>
+                        )}
+                      </div>
                       <div>
                         <p
                           className={`timeline__title timeline__title--${severity.tone}`}

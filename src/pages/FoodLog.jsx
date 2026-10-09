@@ -1,39 +1,63 @@
 import { useState } from 'react'
-import { Check, Search, TriangleAlert } from 'lucide-react'
+import { Check, Hourglass, Search, TriangleAlert } from 'lucide-react'
 import PageHeader from '../components/PageHeader.jsx'
 import {
   formatDate,
   getDayNumber,
   getSeverityBadge,
+  getTrialDay,
+  toLocalDateString,
 } from '../utils/trialHelpers.js'
 import './FoodLog.css'
 
+// "active" matches trial.status, so filtering is just status === filter
 const filters = [
   { id: 'all', label: 'All Foods' },
+  { id: 'active', label: 'In Progress' },
   { id: 'safe', label: 'Safe Only' },
   { id: 'unsafe', label: 'Unsafe (Allergens)' },
 ]
 
+// Icon, badge text and color for each kind of trial
+const verdictStyles = {
+  active: { icon: Hourglass, badge: 'In Progress', tone: 'warning' },
+  safe: { icon: Check, badge: 'Safe Food', tone: 'success' },
+  unsafe: { icon: TriangleAlert, badge: 'Unsafe Food', tone: 'danger' },
+}
+
 // One line describing the worst reaction during a trial
 function getSymptomSummary(trial) {
+  const isActive = trial.status === 'active'
   if (trial.symptoms.length === 0) {
-    return 'No reaction symptoms logged throughout the trial.'
+    return isActive
+      ? 'No entries logged yet.'
+      : 'No reaction symptoms logged throughout the trial.'
   }
-  const worst = trial.symptoms.reduce((a, b) => (b.severity > a.severity ? b : a))
+  const worst = trial.symptoms.reduce((a, b) =>
+    b.severity > a.severity ? b : a,
+  )
+  if (worst.severity === 0) {
+    return isActive
+      ? 'No reactions so far.'
+      : 'No reaction symptoms logged throughout the trial.'
+  }
   const { label } = getSeverityBadge(worst.severity)
   const day = getDayNumber(trial.startDate, worst.date)
   return `${label} on Day ${day}: ${worst.notes}`
 }
 
-// "Sep 18" or "Sep 18 - Sep 22" (start to last logged entry)
+// Active: "Started Sep 18 · Day 22". Finished: "Sep 18 - Oct 2" (start to verdict)
 function getDateRange(trial) {
   const start = formatDate(trial.startDate)
-  if (trial.symptoms.length === 0) return start
-  const lastDate = trial.symptoms
-    .map((symptom) => symptom.date)
-    .sort()
-    .at(-1)
-  return lastDate === trial.startDate ? start : `${start} - ${formatDate(lastDate)}`
+  if (trial.status === 'active') {
+    return `Started ${start} · Day ${getTrialDay(trial.startDate)}`
+  }
+  if (!trial.completedAt) return `Trial: ${start}`
+
+  const end = toLocalDateString(trial.completedAt)
+  return end === trial.startDate
+    ? `Trial: ${start}`
+    : `Trial: ${start} - ${formatDate(end)}`
 }
 
 function FoodLog({ trials, onNavigate, onSelectTrial }) {
@@ -42,10 +66,7 @@ function FoodLog({ trials, onNavigate, onSelectTrial }) {
 
   const hasActiveTrial = trials.some((trial) => trial.status === 'active')
 
-  // Only finished trials (with a verdict) belong in the history
-  const completedTrials = trials.filter((trial) => trial.status !== 'active')
-
-  const visibleTrials = completedTrials
+  const visibleTrials = trials
     .filter((trial) => filter === 'all' || trial.status === filter)
     .filter((trial) =>
       trial.foodName.toLowerCase().includes(query.trim().toLowerCase()),
@@ -61,7 +82,7 @@ function FoodLog({ trials, onNavigate, onSelectTrial }) {
     <section className="food-log">
       <PageHeader
         title="Food Log History"
-        subtitle="Directory of all your past completed, safe, and unsafe food trials."
+        subtitle="Directory of all your food trials: in progress, safe, and unsafe."
         trialModeActive={hasActiveTrial}
       />
 
@@ -72,14 +93,18 @@ function FoodLog({ trials, onNavigate, onSelectTrial }) {
           <input
             type="search"
             className="log-search__input"
-            placeholder="Search past foods..."
+            placeholder="Search foods..."
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            aria-label="Search past foods"
+            aria-label="Search foods"
           />
         </label>
 
-        <div className="log-filters" role="group" aria-label="Filter by verdict">
+        <div
+          className="log-filters"
+          role="group"
+          aria-label="Filter by verdict"
+        >
           {filters.map((option) => (
             <button
               key={option.id}
@@ -97,26 +122,27 @@ function FoodLog({ trials, onNavigate, onSelectTrial }) {
       {/* ===== Trial list ===== */}
       {visibleTrials.length === 0 ? (
         <div className="card log-empty">
-          {completedTrials.length === 0
-            ? 'No completed trials yet. Finished trials will show up here.'
+          {trials.length === 0
+            ? 'No trials yet. Start one from the Dashboard.'
             : 'No foods match your search.'}
         </div>
       ) : (
         <ul className="log-list">
           {visibleTrials.map((trial) => {
-            const isSafe = trial.status === 'safe'
+            const style = verdictStyles[trial.status]
+            const Icon = style.icon
             return (
               <li key={trial.id} className="card log-item">
                 <span
-                  className={`log-item__icon log-item__icon--${isSafe ? 'safe' : 'unsafe'}`}
+                  className={`log-item__icon log-item__icon--${trial.status}`}
                   aria-hidden="true"
                 >
-                  {isSafe ? <Check size={20} /> : <TriangleAlert size={20} />}
+                  <Icon size={20} />
                 </span>
 
                 <div className="log-item__food">
                   <h3>{trial.foodName}</h3>
-                  <p className="log-item__dates">Trial: {getDateRange(trial)}</p>
+                  <p className="log-item__dates">{getDateRange(trial)}</p>
                 </div>
 
                 <div className="log-item__summary">
@@ -126,8 +152,8 @@ function FoodLog({ trials, onNavigate, onSelectTrial }) {
 
                 <div className="log-item__verdict">
                   <p className="eyebrow">Verdict</p>
-                  <span className={`badge badge--${isSafe ? 'success' : 'danger'}`}>
-                    {isSafe ? 'Safe Food' : 'Unsafe Food'}
+                  <span className={`badge badge--${style.tone}`}>
+                    {style.badge}
                   </span>
                 </div>
 

@@ -132,6 +132,14 @@
   white-space: nowrap;
 }
 
+/* Time under the date ("08:30 AM") */
+.activity__time {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
 .activity__food {
   font-weight: 600;
   color: var(--text-h);

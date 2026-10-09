@@ -8,8 +8,11 @@ import {
 import PageHeader from '../components/PageHeader.jsx'
 import {
   formatDate,
+  formatTime,
   getSeverityBadge,
+  getStatusBadge,
   getTrialDay,
+  toLocalDateString,
 } from '../utils/trialHelpers.js'
 import './Dashboard.css'
 
@@ -34,24 +37,47 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
     0,
   )
 
-  // Activity feed: trial starts + symptom logs, newest first
+  // Activity feed: trial starts, symptom logs and verdicts, newest first.
+  // "time" is a full timestamp when we have one (shown as "08:30 AM").
   const activity = trials
-    .flatMap((trial) => [
-      {
-        id: `${trial.id}-start`,
-        date: trial.startDate,
-        foodName: trial.foodName,
-        label: 'Trial Start',
-        tone: 'info',
-      },
-      ...trial.symptoms.map((symptom) => ({
-        id: symptom.id,
-        date: symptom.date,
-        foodName: trial.foodName,
-        ...getSeverityBadge(symptom.severity),
-      })),
-    ])
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .flatMap((trial) => {
+      const items = [
+        {
+          id: `${trial.id}-start`,
+          date: trial.startDate,
+          time: null,
+          foodName: trial.foodName,
+          label: 'Trial Start',
+          tone: 'info',
+        },
+        ...trial.symptoms.map((symptom) => ({
+          id: symptom.id,
+          date: symptom.date,
+          time: symptom.loggedAt,
+          foodName: trial.foodName,
+          ...getSeverityBadge(symptom.severity),
+        })),
+      ]
+
+      if (trial.completedAt) {
+        const isSafe = trial.status === 'safe'
+        items.push({
+          id: `${trial.id}-verdict`,
+          date: toLocalDateString(trial.completedAt),
+          time: trial.completedAt,
+          foodName: trial.foodName,
+          label: isSafe ? 'Marked Safe' : 'Marked Unsafe',
+          tone: isSafe ? 'success' : 'danger',
+        })
+      }
+      return items
+    })
+    // Newest date first; on the same day, the later time first
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) ||
+        (b.time ?? '').localeCompare(a.time ?? ''),
+    )
     .slice(0, 5)
 
   function openTrial(trialId) {
@@ -73,7 +99,10 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
         <article className="card stat-card">
           <div className="stat-card__top">
             <span className="eyebrow">Active Trials</span>
-            <Flame size={18} className="stat-card__icon stat-card__icon--info" />
+            <Flame
+              size={18}
+              className="stat-card__icon stat-card__icon--info"
+            />
           </div>
           <p className="stat-card__value">{activeTrials.length} Active</p>
           <p className="stat-card__note">
@@ -131,35 +160,42 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
           </div>
         ) : (
           <ul className="trial-list">
-            {activeTrials.map((trial) => (
-              <li key={trial.id} className="card trial-card">
-                <div className="trial-card__top">
-                  <div>
-                    <h3>{trial.foodName} Trial</h3>
-                    <p className="trial-card__meta">
-                      Start Date: {formatDate(trial.startDate)} • Day{' '}
-                      {getTrialDay(trial.startDate)}
-                    </p>
+            {activeTrials.map((trial) => {
+              const status = getStatusBadge(trial)
+              return (
+                <li key={trial.id} className="card trial-card">
+                  <div className="trial-card__top">
+                    <div>
+                      <h3>{trial.foodName} Trial</h3>
+                      <p className="trial-card__meta">
+                        Start Date: {formatDate(trial.startDate)} • Day{' '}
+                        {getTrialDay(trial.startDate)}
+                      </p>
+                    </div>
+                    <span className={`badge badge--${status.tone}`}>
+                      Status: {status.label}
+                    </span>
                   </div>
-                  <span className="badge badge--warning">Status: Active</span>
-                </div>
 
-                <p className="trial-card__summary">{getTrialSummary(trial)}</p>
+                  <p className="trial-card__summary">
+                    {getTrialSummary(trial)}
+                  </p>
 
-                <div className="trial-card__actions">
-                  <button
-                    type="button"
-                    className="btn-outline"
-                    onClick={() => openTrial(trial.id)}
-                  >
-                    Log Symptom
-                  </button>
-                  <button type="button" onClick={() => openTrial(trial.id)}>
-                    View Tracker
-                  </button>
-                </div>
-              </li>
-            ))}
+                  <div className="trial-card__actions">
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      onClick={() => openTrial(trial.id)}
+                    >
+                      Log Symptom
+                    </button>
+                    <button type="button" onClick={() => openTrial(trial.id)}>
+                      View Tracker
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
@@ -185,7 +221,14 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
               <tbody>
                 {activity.map((item) => (
                   <tr key={item.id}>
-                    <td className="activity__date">{formatDate(item.date)}</td>
+                    <td className="activity__date">
+                      {formatDate(item.date)}
+                      {item.time && (
+                        <span className="activity__time">
+                          {formatTime(item.time)}
+                        </span>
+                      )}
+                    </td>
                     <td className="activity__food">{item.foodName}</td>
                     <td>
                       <span className={`badge badge--${item.tone}`}>

@@ -103,6 +103,11 @@
   color: var(--danger);
 }
 
+.log-item__icon--active {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
 .log-item__food h3 {
   font-size: 17px;
 }

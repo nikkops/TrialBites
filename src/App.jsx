@@ -119,11 +119,14 @@ function App({ user, onLogOut }) {
   async function handleUpdateStatus(trialId, status) {
     setSaveError('')
     try {
-      await updateTrialStatus(trialId, status)
+      // Supabase sends back the saved status and verdict date
+      const saved = await updateTrialStatus(trialId, status)
 
       setTrials((currentTrials) =>
         currentTrials.map((trial) =>
-          trial.id === trialId ? { ...trial, status } : trial,
+          trial.id === trialId
+            ? { ...trial, status: saved.status, completedAt: saved.completedAt }
+            : trial,
         ),
       )
     } catch (error) {

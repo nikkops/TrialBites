@@ -10,23 +10,28 @@ import { supabase } from './supabase.js'
 // Database columns use snake_case (food_name). The pages use camelCase (foodName).
 // These two functions are the only place that difference exists.
 
-// symptoms row -> { id, date, severity, notes }
+// symptoms row -> { id, date, loggedAt, severity, notes }
 function toSymptom(row) {
   return {
     id: row.id,
     date: row.symptom_date,
+    // The exact moment the entry was saved, used to show the time ("8:30 AM")
+    loggedAt: row.created_at,
     severity: row.severity,
     notes: row.notes,
   }
 }
 
-// trials row (with its symptoms nested inside) -> { id, foodName, startDate, status, symptoms }
+// trials row (with its symptoms nested inside) ->
+// { id, foodName, startDate, status, completedAt, symptoms }
 function toTrial(row) {
   return {
     id: row.id,
     foodName: row.food_name,
     startDate: row.start_date,
     status: row.status,
+    // When the verdict was given; null while the trial is active
+    completedAt: row.completed_at ?? null,
     // Oldest first, so the newest symptom is last (the Dashboard relies on that)
     symptoms: (row.symptoms ?? [])
       .map(toSymptom)
@@ -139,15 +144,18 @@ export async function addSymptom(trialId, symptom) {
 /**
  * Set a trial's verdict.
  * status: 'active' | 'safe' | 'unsafe'
- * Returns: nothing.
+ * Returns: { status, completedAt } as saved.
  * Throws: an Error if Supabase returns one.
  */
 export async function updateTrialStatus(trialId, status) {
+  // Giving a verdict records when; going back to 'active' clears it
+  const completedAt = status === 'active' ? null : new Date().toISOString()
+
   const { data, error } = await supabase
     .from('trials')
     // Step 1a: only the columns we list get changed. Everything else
     // (food_name, start_date...) stays the same.
-    .update({ status })
+    .update({ status, completed_at: completedAt })
     // Step 1b: .eq('id', trialId) means "WHERE id = trialId".
     // This line is what stops the update from changing EVERY trial.
     .eq('id', trialId)
@@ -161,6 +169,10 @@ export async function updateTrialStatus(trialId, status) {
   // return an error. It just updates 0 rows and says nothing. Checking that
   // we got a row back turns that silent failure into a visible one.
   if (data.length === 0) {
-    throw new Error('Trial was not updated. It may not exist, or access was denied.')
+    throw new Error(
+      'Trial was not updated. It may not exist, or access was denied.',
+    )
   }
+
+  return { status: data[0].status, completedAt: data[0].completed_at }
 }

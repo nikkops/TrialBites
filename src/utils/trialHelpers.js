@@ -29,15 +29,28 @@ export function getDayNumber(startDate, date) {
   return Math.round((parseDate(date) - parseDate(startDate)) / msPerDay) + 1
 }
 
+// A full timestamp ('2026-10-09T03:15:00Z') -> its date in YOUR timezone,
+// as 'YYYY-MM-DD'. Timestamps are stored in UTC, so this converts first.
+export function toLocalDateString(timestamp) {
+  const date = new Date(timestamp)
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+// A full timestamp -> '08:30 AM' in your timezone
+export function formatTime(timestamp) {
+  return new Date(timestamp).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 // Which trial day it is today
 export function getTrialDay(startDate) {
-  const today = new Date()
-  const todayString = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, '0'),
-    String(today.getDate()).padStart(2, '0'),
-  ].join('-')
-  return getDayNumber(startDate, todayString)
+  return getDayNumber(startDate, toLocalDateString(new Date()))
 }
 
 // Severity levels for the tracker's picker. `value` is what gets saved,
@@ -57,9 +70,18 @@ export function getSeverityBadge(severity) {
   return { label: 'No Symptoms', tone: 'success' }
 }
 
-// Trial status -> badge text + color
-export function getStatusBadge(status) {
-  if (status === 'safe') return { label: 'Safe', tone: 'success' }
-  if (status === 'unsafe') return { label: 'Unsafe', tone: 'danger' }
-  return { label: 'Active', tone: 'warning' }
+// Trial -> badge text + color.
+// Finished trials show their verdict. Active trials get a finer status
+// worked out from their entries (no extra database column needed):
+//  - Baseline:     nothing logged yet
+//  - Under Watch:  at least one mild-or-worse reaction
+//  - No Reactions: entries logged, all of them "None"
+export function getStatusBadge(trial) {
+  if (trial.status === 'safe') return { label: 'Safe', tone: 'success' }
+  if (trial.status === 'unsafe') return { label: 'Unsafe', tone: 'danger' }
+
+  if (trial.symptoms.length === 0) return { label: 'Baseline', tone: 'info' }
+  const hasReaction = trial.symptoms.some((symptom) => symptom.severity >= 1)
+  if (hasReaction) return { label: 'Under Watch', tone: 'warning' }
+  return { label: 'No Reactions', tone: 'success' }
 }
