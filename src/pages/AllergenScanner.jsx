@@ -1,27 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Camera,
+  CircleAlert,
   CircleCheck,
   CircleX,
   Info,
   Sparkles,
 } from 'lucide-react'
 import PageHeader from '../components/PageHeader.jsx'
+import { scanLabel } from '../lib/scannerApi.js'
 import './AllergenScanner.css'
-
-/*
- * Placeholder for the real image analysis (e.g. the Gemini API).
- * Later, replace the body with the API call. It should resolve to:
- *   { matches: [{ ingredient: 'Peanut Flour', synonym: 'Arachis Hypogaea', allergen: 'Peanuts' }] }
- * An empty matches array means nothing reactive was found.
- */
-async function scanLabel(file, allergens) {
-  void file
-  void allergens
-  throw new Error(
-    'Scanning is not connected yet. The analysis service will be added later.',
-  )
-}
 
 function AllergenScanner({ trials }) {
   const fileInputRef = useRef(null)
@@ -59,10 +47,19 @@ function AllergenScanner({ trials }) {
       return
     }
 
+    // Nothing to compare against yet, so don't use up a Gemini request
+    if (allergens.length === 0) {
+      setResult(null)
+      setError(
+        "You haven't marked any foods as unsafe yet, so there's nothing to check this label against.",
+      )
+      return
+    }
+
     setIsScanning(true)
     setError('')
     try {
-      setResult(await scanLabel(file, allergens))
+      setResult(await scanLabel(file))
     } catch (scanError) {
       setResult(null)
       setError(scanError.message)
@@ -151,7 +148,18 @@ function AllergenScanner({ trials }) {
             Matched against your reactive trial food logs
           </p>
 
-          {result ? (
+          {result && result.readable === false ? (
+            <>
+              <p className="results__alert results__alert--warning">
+                <CircleAlert size={18} />
+                Couldn't Read an Ingredient List
+              </p>
+              <p className="results__hint">
+                Try a closer, well-lit photo with the whole ingredient list in
+                view.
+              </p>
+            </>
+          ) : result ? (
             <>
               {result.matches.length > 0 ? (
                 <p className="results__alert results__alert--danger">
@@ -172,14 +180,12 @@ function AllergenScanner({ trials }) {
                     Identified Ingredient Matches
                   </h3>
                   <ul className="matches">
-                    {result.matches.map((match) => (
-                      <li key={match.ingredient} className="match">
+                    {result.matches.map((match, index) => (
+                      <li key={`${match.ingredient}-${index}`} className="match">
                         <div>
                           <p className="match__name">“{match.ingredient}”</p>
                           {match.synonym && (
-                            <p className="match__synonym">
-                              Synonym: {match.synonym}
-                            </p>
+                            <p className="match__synonym">{match.synonym}</p>
                           )}
                         </div>
                         <span className="badge badge--danger">
@@ -189,6 +195,24 @@ function AllergenScanner({ trials }) {
                     ))}
                   </ul>
                 </>
+              )}
+
+              <h3 className="results__heading">Checked against</h3>
+              <div className="watch-list">
+                {result.allergensChecked.map((name) => (
+                  <span key={name} className="badge badge--danger">
+                    {name}
+                  </span>
+                ))}
+              </div>
+
+              {result.ingredients.length > 0 && (
+                <details className="ingredients">
+                  <summary>
+                    All ingredients read ({result.ingredients.length})
+                  </summary>
+                  <p>{result.ingredients.join(', ')}</p>
+                </details>
               )}
             </>
           ) : (
