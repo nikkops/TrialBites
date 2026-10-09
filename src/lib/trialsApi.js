@@ -53,13 +53,27 @@ function getLocalDate() {
  * Throws: an Error if Supabase returns one.
  */
 export async function fetchTrials() {
-  // TODO 1: select from the "trials" table, including each trial's related
-  //         symptoms in the same request (look up "nested select" / "foreign
-  //         table select" in the Supabase docs).
-  // TODO 2: order the trials by start_date, newest first.
-  // TODO 3: if Supabase returns an error, throw it.
-  // TODO 4: return the rows converted with toTrial().
-  throw new Error('fetchTrials() is not written yet')
+  const { data, error } = await supabase
+    // Step 1: read from the "trials" table.
+    .from('trials')
+    // '*' means "every column of trials".
+    // 'symptoms(*)' means "and every column of each related symptom".
+    // Supabase knows they're related because symptoms.trial_id
+    // references trials.id (the foreign key from our SQL).
+    // Result: each trial comes back with a "symptoms" array inside it,
+    // so we don't need a second request for symptoms.
+    .select('*, symptoms(*)')
+    // Step 2: newest trial first. ascending: false = biggest date first.
+    .order('start_date', { ascending: false })
+
+  // Step 3: Supabase doesn't throw on its own. It hands back an "error"
+  // object instead, so we check it and throw ourselves. That way App.jsx
+  // can catch it with try/catch and show a message.
+  if (error) throw error
+
+  // Step 4: "data" is an array of raw database rows.
+  // .map(toTrial) runs toTrial on each row, giving us the shape the pages use.
+  return data.map(toTrial)
 }
 
 /**
@@ -69,15 +83,29 @@ export async function fetchTrials() {
  * Throws: an Error if Supabase returns one.
  */
 export async function addSymptom(trialId, symptom) {
-  // TODO 1: insert one row into "symptoms" with trial_id, severity, notes,
-  //         and symptom_date set to getLocalDate().
-  // TODO 2: ask Supabase to send the inserted row back (an insert returns
-  //         nothing unless you ask for it).
-  // TODO 3: if Supabase returns an error, throw it.
-  // TODO 4: return the row converted with toSymptom().
-  void trialId
-  void symptom
-  throw new Error('addSymptom() is not written yet')
+  const { data, error } = await supabase
+    .from('symptoms')
+    // Step 1: the keys here must match the COLUMN names in the table
+    // (snake_case), not the names the app uses.
+    // We don't send id or created_at: the database fills those in itself.
+    .insert({
+      trial_id: trialId,
+      symptom_date: getLocalDate(),
+      severity: symptom.severity,
+      notes: symptom.notes,
+    })
+    // Step 2: by default an insert returns nothing. .select() says
+    // "send me back the row you just saved", and .single() says
+    // "it's exactly one row, so give me an object, not an array".
+    // We need the saved row because it contains the new id the database made.
+    .select()
+    .single()
+
+  // Step 3: same pattern as fetchTrials.
+  if (error) throw error
+
+  // Step 4: convert the saved row into the app's shape.
+  return toSymptom(data)
 }
 
 /**
@@ -87,11 +115,24 @@ export async function addSymptom(trialId, symptom) {
  * Throws: an Error if Supabase returns one.
  */
 export async function updateTrialStatus(trialId, status) {
-  // TODO 1: update the "status" column in "trials"
-  //         ONLY for the row whose id equals trialId.
-  //         (Without that filter, the update would hit every row.)
-  // TODO 2: if Supabase returns an error, throw it.
-  void trialId
-  void status
-  throw new Error('updateTrialStatus() is not written yet')
+  const { data, error } = await supabase
+    .from('trials')
+    // Step 1a: only the columns we list get changed. Everything else
+    // (food_name, start_date...) stays the same.
+    .update({ status })
+    // Step 1b: .eq('id', trialId) means "WHERE id = trialId".
+    // This line is what stops the update from changing EVERY trial.
+    .eq('id', trialId)
+    // Ask for the updated row back so we can check something actually changed.
+    .select()
+
+  // Step 2: same pattern as before.
+  if (error) throw error
+
+  // Extra check: if Row Level Security blocks an update, Supabase does NOT
+  // return an error. It just updates 0 rows and says nothing. Checking that
+  // we got a row back turns that silent failure into a visible one.
+  if (data.length === 0) {
+    throw new Error('Trial was not updated. It may not exist, or access was denied.')
+  }
 }

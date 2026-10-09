@@ -86,6 +86,10 @@
   margin-top: auto;
 }
 
+.sidebar__link {
+  white-space: nowrap;
+}
+
 /* ===== Page area ===== */
 .main-content {
   flex: 1;
