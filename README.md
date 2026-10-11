@@ -1,124 +1,100 @@
-# TrialBites — Final Project
+# Finals: your final project (3 weeks)
 
-## My project repository
+Your finals grade is built from your final project, not from a single exam. The
+project is the exam. Over three weeks you submit nine things in Canvas so that
+your grade reflects your whole three weeks of work, not just whatever state the
+project happens to be in on the last day.
 
-Public repository: https://github.com/nikkops/TrialBites
+Everything you submit is a link. Your project code lives in your own public
+GitHub repository; your reports, documentation, and journal live in your
+workspace; your presentation lives on Google Drive. You paste the relevant link
+into each Canvas assignment.
 
-Live app (if deployed): https://trial-bites.vercel.app
+## What you submit, and when
 
-## What it is
+Every deadline falls at 23:59. All three week 3 submissions (the final project,
+the presentation and the badge) are now due Friday 2026-10-09, with no late
+window, so go by the week 3 dates below rather than an older copy of this page.
 
-TrialBites is a web app for people doing elimination diets or food reintroduction
-trials: you start a trial for one food, log your reactions day by day, and record a
-final safe or unsafe verdict. It keeps a searchable history of every food you've
-tried, warns you about your unsafe foods, and can scan a photo of an ingredient label
-with Gemini to flag ingredients that match them (including hidden names like
-"Arachis hypogaea" for peanut).
+### Weeks 1 and 2: progress (submitted twice, identical format)
 
-**Built with:** React + Vite (front end), Supabase (Postgres database, login, Row
-Level Security, and an Edge Function), Google Gemini (label scanning), deployed on
-Vercel.
+Each week you submit the same three things. Submitting them in both weeks is
+what lets us see your progress.
 
-## How to run it
+1. Project Increment Report (20 points) - write it in your workspace under
+   `project/REPORT.md`. Say what you changed this week, why, what broke, and
+   what is left. Your commits should back it up.
+2. Documentation Update (15 points) - keep your setup steps, API usage, and
+   screenshots current in your `project/` folder and your project repo's README.
+   See `documentation-guide.md` in this unit for exactly what your docs must
+   contain.
+3. Reflection Journal (15 points) - write in your workspace `journal/`. Your
+   goal for the week, what you did, what blocked you, what you learned.
 
-### What you need
+Week 1 is due Sunday of week 1; week 2 is due Sunday of week 2.
 
-- [Node.js](https://nodejs.org) 20 or newer
-- A free [Supabase](https://supabase.com) account
-- Optional, only for the Allergen Scanner: a free Gemini API key from
-  [Google AI Studio](https://aistudio.google.com)
+Start from the templates in this unit: `report-template.md` for your report, `journal-template.md` for your journal, and `security-checklist-template.md` for your security checklist (part of the final project in week 3).
 
-### 1. Get the code
+### Week 3: the final submission
 
-```bash
-git clone https://github.com/Technix19/YOUR-REPO.git
-cd YOUR-REPO
-npm install
-```
+The final project, the presentation and the badge are all due Friday 2026-10-09
+at 23:59. Canvas closes at the same moment, so there is no late window.
 
-### 2. Set up the database
+4. Final Project (100 points) - your finished Node/Express and Postgres app in
+   your own public repository. This is the exam. It includes your completed
+   `SECURITY-CHECKLIST.md` (5 of the 100 points); see the security checklist
+   section of `documentation-guide.md`.
+5. Final Project Presentation (100 points) - a video, slides, and a square
+   image (see below).
+6. Builds Full-Stack JavaScript and AI (100 points) - the badge. One file, `AI-USAGE.md`, in
+   your project repository, plus a credit in your README. Start it in week 1
+   and keep it up as you go. See the `finals-badge` unit.
 
-1. In Supabase, create a new project.
-2. Open **SQL Editor → New query**, paste in all of [`supabase/schema.sql`](supabase/schema.sql),
-   and click **Run**. This creates the `trials` and `symptoms` tables and the Row
-   Level Security rules that make each user see only their own data.
-3. Go to **Authentication → Sign In / Providers → Email** and turn off
-   **Confirm email** (so new accounts can log in straight away while testing).
-4. Go to **Authentication → URL Configuration** and add `http://localhost:5173`
-   under **Redirect URLs** (needed for password reset emails).
+## How much of it can be AI?
 
-### 3. Connect the app to your database
+Your project must be no more than **80 percent vibe coded**. Put another way, and
+this is the half we actually grade: **at least a fifth of your project is code you
+wrote yourself, and you can show which fifth and explain it.**
 
-Copy the example environment file:
+You show it in `AI-USAGE.md` in your project repository. See the
+`finals-badge` unit for how that file works and what it is worth.
 
-```bash
-cp .env.example .env.local
-```
+## Your project repository
 
-Then open `.env.local` and replace the example values with your project's own,
-from **Project Settings → API** in Supabase:
+Create your project from the class template: go to
+`HAU-6APSI/final-project-template`, click "Use this template", and make a new
+repository in your own GitHub account. Set it to public.
 
-```
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key-here
-```
+Then, in your workspace, **create** `project/README.md`: copy
+`project-README-template.md` from this unit into it and fill it in, so it links
+your project repository. Most workspaces do not have that file yet, so expect to
+create it rather than edit it. That link is the only thing joining your workspace
+to your project, and **both your final project and your AI usage badge are graded
+through it**, so make sure it is correct and that your repository is public.
 
-Use the **publishable (anon)** key only. Never use the `service_role` / secret key
-here. `.env.local` is ignored by Git, so your keys are not committed.
+Do not put your name, student number, or email in the public project repository,
+and never commit real database credentials. Your identity stays in your
+workspace, which is private.
 
-### 4. Run it
+## The presentation (week 3)
 
-```bash
-npm run dev
-```
+Your presentation has three parts. Submit all of them through the Canvas
+presentation assignment.
 
-Open http://localhost:5173, create an account on the **Sign up** tab, and you're in.
-Use **Start New Trial** on the Dashboard to add your first food.
+- Video (60 points), 3 to 5 minutes, as a public Google Drive link. Walk through
+  your app and your code, and explain the choices you made. Show your face and
+  use your voice. We are grading whether you can explain your own project, not
+  video production.
+- Slides (25 points), as a link or PDF: the problem, a demo, the tech you used,
+  the challenges, and what you would do next.
+- Square image (15 points), 1080 by 1080 pixels: your project title, your name,
+  and one screenshot or logo. This is something you can post on social media.
 
-### 5. Optional: turn on the Allergen Scanner
+Missing one part costs that part's points, not the whole grade.
 
-Everything else works without this step. The scanner's code runs inside your
-Supabase project (as an Edge Function) rather than in the browser, so your Gemini
-key is never exposed. To add it to your project:
+## How grading works
 
-1. In Supabase, go to **Edge Functions → Secrets** and add:
-   - `GEMINI_API_KEY` = your key from Google AI Studio
-   - `GEMINI_MODEL` (optional) = a Gemini model name; defaults to `gemini-3.8-flash`
-   - `GEMINI_FALLBACK_MODEL` (optional) = a second model to try if the first is busy
-2. Go to **Edge Functions → Deploy a new function → Via Editor**, name it exactly
-   `scan-label`, paste in [`supabase/functions/scan-label/index.ts`](supabase/functions/scan-label/index.ts),
-   and click **Deploy** (this saves the function to your Supabase project).
-3. In the app, mark at least one trial as **Unsafe**, then scan a label on the
-   **Allergen Scanner** page.
-
-If a scan fails, the details are in **Edge Functions → scan-label → Logs**.
-
-### Project structure
-
-```
-src/
-  AuthGate.jsx        shows the login page or the app
-  App.jsx             loads trials and handles saving
-  lib/                everything that talks to Supabase
-    supabase.js         the Supabase client
-    trialsApi.js        trials and symptoms queries
-    authApi.js          sign up, log in, log out, password reset
-    scannerApi.js       sends label photos to the scan-label function
-  pages/              Dashboard, TrialTracker, FoodLog, AllergenScanner, AuthPage
-  components/         AppShell (sidebar), PageHeader, NewTrialDialog
-  utils/trialHelpers.js  dates, times, and status badges
-supabase/
-  schema.sql          database setup (run once)
-  functions/scan-label/index.ts  the Gemini label scanner
-```
-
-## Presentation
-
-- Video (public Google Drive link): https://YOUR-VIDEO-LINK
-- Slides (link or PDF): https://YOUR-SLIDES-LINK
-- Square image: in this folder, or a link.
-
-## AI usage
-
-Check the`AI-USAGE.md` in my project repository
-
+Your report, documentation, journal, and project code are read and graded with
+feedback held for your instructor's review. Your presentation is graded by hand.
+The exact rubric for every piece is in `rubrics.md` in this unit, so you know
+what earns the marks before you submit.
