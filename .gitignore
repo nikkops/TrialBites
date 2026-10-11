@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files hold real keys. Only the example file is committed.
+.env
+.env.*
+!.env.example
