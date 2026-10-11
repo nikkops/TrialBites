@@ -2,8 +2,8 @@
 
 [![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
 
-Built with heavy help from **Claude (Anthropic)** as a coding assistant: it wrote most of the
-styling, the Supabase connection, login and the Gemini label scanner, with me directing,
+Built with  help from **Claude (Anthropic)** as a coding assistant: it wrote most of the
+styling, the Supabase connection, and the Gemini label scanner, with me directing,
 testing and fixing each step. Details, the mistakes it made, and who wrote what:
 [AI-USAGE.md](AI-USAGE.md).
 
@@ -121,12 +121,10 @@ supabase/
 
 ## Presentation
 
-- Video (public Google Drive link): https://YOUR-VIDEO-LINK
-- Slides (link or PDF): https://YOUR-SLIDES-LINK
-- Square image: in this folder, or a link.
+- Video, Slides, and Image: https://drive.google.com/drive/folders/1a850P9Exrm0QcKxZ0-WuyxmDm3BGk-AU?usp=sharing
 
 ## AI usage
 
-I used Claude (Anthropic) heavily as a coding assistant throughout this project.
+I used Claude (Anthropic) as a coding assistant throughout this project.
 Link to the `AI-USAGE.md` in my project repository:
 https://github.com/nikkops/TrialBites/blob/main/AI-USAGE.md
