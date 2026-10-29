@@ -104,7 +104,7 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
               className="stat-card__icon stat-card__icon--info"
             />
           </div>
-          <p className="stat-card__value">{activeTrials.length} Active</p>
+          <p className="stat-card__value"><span className="stat-card__num">{activeTrials.length}</span> Active</p>
           <p className="stat-card__note">
             {activeTrials.length === 0
               ? 'No trials running right now'
@@ -122,7 +122,7 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
               className="stat-card__icon stat-card__icon--danger"
             />
           </div>
-          <p className="stat-card__value">{symptomCount} Symptom Logs</p>
+          <p className="stat-card__value"><span className="stat-card__num">{symptomCount}</span> Symptom Logs</p>
           <p className="stat-card__note">Logged across all trials</p>
         </article>
 
@@ -134,7 +134,7 @@ function Dashboard({ trials, onNavigate, onSelectTrial, onStartNewTrial }) {
               className="stat-card__icon stat-card__icon--success"
             />
           </div>
-          <p className="stat-card__value">{safeTrials.length} Safe foods</p>
+          <p className="stat-card__value"><span className="stat-card__num">{safeTrials.length}</span> Safe foods</p>
           <p className="stat-card__note">Confirmed safety clearances logged</p>
         </article>
       </div>

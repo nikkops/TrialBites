@@ -147,7 +147,7 @@
 .results__alert--warning {
   border-color: var(--warning);
   background: var(--warning-bg);
-  color: #8a6a0c;
+  color: var(--warning-text);
 }
 
 .results__hint {
@@ -166,7 +166,7 @@
 .ingredients summary {
   cursor: pointer;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .ingredients p {
@@ -190,7 +190,7 @@
   padding: 10px 14px;
   border-radius: var(--radius-sm);
   background: var(--warning-bg);
-  color: #8a6a0c;
+  color: var(--warning-text);
 }
 
 .watch-list {

@@ -36,12 +36,23 @@
 }
 
 .stat-card__value {
-  margin: 14px 0 16px;
-  font-size: 30px;
-  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 14px 0 12px;
+  font-size: 17px;
+  font-weight: 600;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* The number itself: the loudest thing in the card */
+.stat-card__num {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--text-h);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-card__note {
@@ -126,6 +137,7 @@
 }
 
 .activity__date {
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-h);

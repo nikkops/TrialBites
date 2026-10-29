@@ -84,7 +84,8 @@
 
 .sidebar__link.is-active {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
 }
 
 /* Pushes Help & Documentation to the bottom */

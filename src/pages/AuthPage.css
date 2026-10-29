@@ -41,9 +41,9 @@
 
 .auth__headline {
   max-width: 440px;
-  font-size: 34px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-size: 36px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
 }
 
 .auth__lead {
@@ -178,10 +178,6 @@
   font-size: 14px;
 }
 
-.auth__input::placeholder {
-  color: #a0aab8;
-}
-
 .auth__input:focus {
   border-color: var(--accent);
   background: var(--surface);
@@ -220,7 +216,7 @@
   padding: 0;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 13px;
   font-weight: 500;
 }

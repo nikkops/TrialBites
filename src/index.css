@@ -10,20 +10,22 @@
 
   /* Text */
   --text: #475569;          /* body text */
-  --text-muted: #64748b;    /* labels, captions */
+  --text-muted: #5b6b80;    /* labels, captions, placeholders (AA on --bg) */
   --text-h: #1e293b;        /* headings */
 
   /* Accent (blue) */
-  --accent: #4a9ae0;
-  --accent-hover: #3b88cf;
+  --accent: #2f78bd;        /* fills; white text on it passes AA */
+  --accent-hover: #2766a3;
+  --accent-text: #2766a3;   /* blue text on tinted backgrounds */
   --accent-bg: #e8f2fc;
 
   /* Status colors */
-  --success: #22a06b;
+  --success: #157a50;
   --success-bg: #e6f6ee;
-  --warning: #d4a017;
+  --warning: #d4a017;       /* borders and icons only */
+  --warning-text: #8a6a0c;  /* amber text that passes AA */
   --warning-bg: #fdf3d7;
-  --danger: #e03e3e;
+  --danger: #c4302f;
   --danger-bg: #fdf1f1;
   --danger-border: #f1a7a7;
 
@@ -31,7 +33,7 @@
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 14px;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.03);
 
   /* Type */
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -58,6 +60,19 @@ body {
   margin: 0;
   min-height: 100vh;
   background: var(--bg);
+  caret-color: var(--accent);
+  scrollbar-color: #c3ccd7 transparent;
+}
+
+::selection {
+  background: #cfe2f5;
+  color: var(--text-h);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
 }
 
 #root {
@@ -93,8 +108,10 @@ h3 {
 }
 
 h1 {
-  font-size: 26px;
-  line-height: 1.25;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 h2 {
@@ -129,7 +146,12 @@ button {
   font-size: 14px;
   background: var(--bg);
   color: var(--text-h);
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s,
+    transform 0.1s ease-out;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 button:hover {
@@ -168,7 +190,7 @@ textarea:focus-visible {
 /* Outlined blue button ("Log Symptom") */
 .btn-outline {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent);
 }
 
@@ -196,7 +218,7 @@ textarea:focus-visible {
 
 .badge--info {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .badge--success {
@@ -206,7 +228,7 @@ textarea:focus-visible {
 
 .badge--warning {
   background: var(--warning-bg);
-  color: var(--warning);
+  color: var(--warning-text);
 }
 
 .badge--danger {
@@ -219,7 +241,7 @@ textarea:focus-visible {
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
 }
 

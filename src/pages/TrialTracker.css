@@ -16,8 +16,9 @@
   padding: 0;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 14px;
+  font-weight: 500;
 }
 
 .back-link:hover {
@@ -63,6 +64,7 @@
 
 .trial-facts__value {
   margin-top: 2px;
+  font-variant-numeric: tabular-nums;
   font-size: 17px;
   font-weight: 700;
   color: var(--text-h);
@@ -110,10 +112,6 @@
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
-.field__input::placeholder {
-  color: #a0aab8;
-}
-
 /* Severity picker (None / Mild / Moderate / Severe) */
 .severity-picker {
   display: flex;
@@ -127,23 +125,32 @@
 }
 
 .severity-option.is-selected {
-  background: var(--surface);
+  font-weight: 600;
 }
 
 .severity-option--none.is-selected {
   border-color: var(--success);
+  background: var(--success-bg);
   color: var(--success);
 }
 
 .severity-option--mild.is-selected {
   border-color: var(--warning);
-  color: var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning-text);
 }
 
 .severity-option--moderate.is-selected,
 .severity-option--severe.is-selected {
   border-color: var(--danger);
+  background: var(--danger-bg);
   color: var(--danger);
+}
+
+/* Severe gets the stronger fill so it never reads like Moderate */
+.severity-option--severe.is-selected {
+  background: var(--danger);
+  color: #fff;
 }
 
 .log-form__footer {
@@ -193,7 +200,7 @@
 }
 
 .timeline__title--warning {
-  color: var(--warning);
+  color: var(--warning-text);
 }
 
 .timeline__title--danger {
@@ -235,6 +242,9 @@
 }
 
 .verdict-option__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 15px;
   font-weight: 600;
 }
@@ -271,10 +281,6 @@
   padding: 15px;
 }
 
-.verdict-option.is-selected .verdict-option__title::after {
-  content: ' ✓';
-}
-
 /* ===== Smaller screens ===== */
 @media (max-width: 1000px) {
   .tracker__layout {
@@ -287,6 +293,16 @@
 }
 
 @media (max-width: 600px) {
+  /* Even 2x2 grid instead of "Severe" wrapping alone */
+  .severity-picker {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .severity-option {
+    padding-block: 10px;
+  }
+
   .timeline__item {
     grid-template-columns: 1fr;
     gap: 4px;

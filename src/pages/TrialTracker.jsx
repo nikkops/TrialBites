@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Check } from 'lucide-react'
 import PageHeader from '../components/PageHeader.jsx'
 import {
   formatDate,
@@ -235,7 +235,10 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
             aria-pressed={trial.status === 'safe'}
             onClick={() => onUpdateStatus(trial.id, 'safe')}
           >
-            <span className="verdict-option__title">Mark as Safe</span>
+            <span className="verdict-option__title">
+              Mark as Safe
+              {trial.status === 'safe' && <Check size={16} aria-hidden="true" />}
+            </span>
             <span className="verdict-option__text">
               Log this food as completely safe. It will show as a safe food in
               your Food Log.
@@ -252,6 +255,9 @@ function TrialTracker({ trial, onLogSymptom, onUpdateStatus, onNavigate }) {
           >
             <span className="verdict-option__title">
               Mark as Unsafe (Allergen)
+              {trial.status === 'unsafe' && (
+                <Check size={16} aria-hidden="true" />
+              )}
             </span>
             <span className="verdict-option__text">
               Flag this food as reactive. It will appear in the dashboard's
