@@ -3,7 +3,7 @@
 [![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
 
 Built with  help from **Claude (Anthropic)** as a coding assistant: it wrote most of the
-styling, the Supabase connection, and the Gemini label scanner, with me directing,
+styling, the Supabase connection, and the Gemini food scanner, with me directing,
 testing and fixing each step. Details, the mistakes it made, and who wrote what:
 [AI-USAGE.md](AI-USAGE.md).
 
@@ -18,12 +18,12 @@ Live app (if deployed): https://trial-bites.vercel.app/
 TrialBites is a web app for people doing elimination diets or food reintroduction
 trials: you start a trial for one food, log your reactions day by day, and record a
 final safe or unsafe verdict. It keeps a searchable history of every food you've
-tried, warns you about your unsafe foods, and can scan a photo of an ingredient label
-with Gemini to flag ingredients that match them (including hidden names like
-"Arachis hypogaea" for peanut).
+tried, warns you about your unsafe foods, and can scan a photo of food with Gemini
+to flag anything that is, or usually contains, one of them (for example almond
+flour in macarons). It never calls a food safe: a photo can't show hidden ingredients.
 
 **Built with:** React + Vite (front end), Supabase (Postgres database, login, Row
-Level Security, and an Edge Function), Google Gemini (label scanning), deployed on
+Level Security, and an Edge Function), Google Gemini (food scanning), deployed on
 Vercel.
 
 ## How to run it
@@ -95,7 +95,7 @@ key is never exposed. To add it to your project:
 2. Go to **Edge Functions → Deploy a new function → Via Editor**, name it exactly
    `scan-label`, paste in [`supabase/functions/scan-label/index.ts`](supabase/functions/scan-label/index.ts),
    and click **Deploy** (this saves the function to your Supabase project).
-3. In the app, mark at least one trial as **Unsafe**, then scan a label on the
+3. In the app, mark at least one trial as **Unsafe**, then scan a photo of food on the
    **Allergen Scanner** page.
 
 If a scan fails, the details are in **Edge Functions → scan-label → Logs**.
@@ -110,13 +110,13 @@ src/
     supabase.js         the Supabase client
     trialsApi.js        trials and symptoms queries
     authApi.js          sign up, log in, log out, password reset
-    scannerApi.js       sends label photos to the scan-label function
+    scannerApi.js       sends food photos to the scan-label function
   pages/              Dashboard, TrialTracker, FoodLog, AllergenScanner, AuthPage
   components/         AppShell (sidebar), PageHeader, NewTrialDialog
   utils/trialHelpers.js  dates, times, and status badges
 supabase/
   schema.sql          database setup (run once)
-  functions/scan-label/index.ts  the Gemini label scanner
+  functions/scan-label/index.ts  the Gemini food scanner
 ```
 
 ## Presentation

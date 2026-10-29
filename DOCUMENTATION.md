@@ -26,7 +26,7 @@ Also: [Security checklist](#security-checklist) · [AI usage](#ai-usage) · [Mor
 
 ## 1. Overview
 
-TrialBites is a food-trial tracker for people doing a single-food elimination diet or food reintroduction. You start a trial for one food, log your reactions day by day, and give it a final **safe** or **unsafe** verdict. The app keeps a searchable history of every food you've tried, warns you about the ones marked unsafe, and can scan a photo of an ingredient label with Google Gemini to flag ingredients that match them, including hidden or scientific names like *Arachis hypogaea* for peanut.
+TrialBites is a food-trial tracker for people doing a single-food elimination diet or food reintroduction. You start a trial for one food, log your reactions day by day, and give it a final **safe** or **unsafe** verdict. The app keeps a searchable history of every food you've tried, warns you about the ones marked unsafe, and can scan a photo of food with Google Gemini to flag anything that is, or usually contains, one of them, such as almond flour in macarons. It never calls a food safe, because a photo can't show hidden ingredients.
 
 **Who it's for:** anyone doing a food elimination or allergen trial under medical guidance who wants one place to track each food, their reactions, and the final verdict, instead of notes scattered across a phone. Each person has their own account, and their trials are private to them.
 
@@ -36,7 +36,7 @@ TrialBites is a food-trial tracker for people doing a single-food elimination di
 |---|---|---|
 | Frontend | React + Vite, plain CSS, [Lucide](https://lucide.dev/) icons | `src/` |
 | Database and login | Supabase (Postgres, Supabase Auth, Row Level Security) | `supabase/schema.sql` |
-| Label scanner | Supabase Edge Function (Deno) calling Google Gemini | `supabase/functions/scan-label/` |
+| Food scanner | Supabase Edge Function (Deno) calling Google Gemini | `supabase/functions/scan-label/` |
 | Hosting | Vercel (static site), deployed from GitHub | |
 
 There is no separate server: the browser talks to Supabase directly with the
@@ -131,7 +131,7 @@ npm run dev
 
 - **http://localhost:5173** shows the login page: *"Find out which foods are safe for you."* on the left, and a **Log in / Sign up** card on the right.
 - After signing up, you land on the **Clinical Dashboard** with an empty "Currently Active Food Trials" section and a **Start New Trial** button.
-- In the Allergen Scanner, with at least one trial marked unsafe, scanning a label shows **Analysis Results** within a few seconds.
+- In the Allergen Scanner, with at least one trial marked unsafe, scanning a photo of food shows **Analysis Results** within a few seconds.
 
 **When it doesn't**
 
@@ -162,7 +162,7 @@ npm run dev
 4. **Watch its status** on the Dashboard. Each active trial shows **Baseline** (nothing logged yet), **Under Watch** (at least one reaction), or **No Reactions** (only "None" entries).
 5. **Give a verdict** with **Mark as Safe** or **Mark as Unsafe (Allergen)**. The date of the verdict is saved. Unsafe foods appear in the Dashboard's red **Clinical Allergen Shield** warning.
 6. **Look back** in the **Food Log**: every trial, searchable by name, with filters for **In Progress**, **Safe Only** and **Unsafe (Allergens)**, each showing its dates, its worst reaction and its verdict.
-7. **Scan a label** in the **Allergen Scanner**: upload or take a photo of an ingredient list and press **Scan & Analyze**. The app shrinks the photo, Gemini reads it, and the results list every ingredient that matches one of your unsafe foods, why it matches (a scientific name, "derived from milk", a "may contain" warning), and every ingredient it read.
+7. **Scan a food** in the **Allergen Scanner**: upload or take a photo of a food or meal and press **Scan & Analyze**. The app shrinks the photo, Gemini identifies what's in it, and the results list each possible match with one of your unsafe foods, rated **Seen** (visible, or named on a label in the photo), **Likely** (that dish usually contains it) or **Possible**, with the reason, plus every food it identified. If nothing matches, it says none were spotted rather than calling the food safe.
 8. **Log out** from the bottom of the sidebar.
 
 ### Data functions
@@ -178,7 +178,7 @@ There is no custom REST API. The app reads and writes through the Supabase clien
 | `authApi.js` | `signUp` · `logIn` · `logOut` | Account access |
 | `authApi.js` | `sendPasswordReset` · `updatePassword` | Forgot-password flow |
 | `authApi.js` | `onAuthChange(callback)` | Tells the app when someone logs in or out |
-| `scannerApi.js` | `scanLabel(file)` | Shrinks a photo and sends it to the scanner function |
+| `scannerApi.js` | `scanFood(file)` | Shrinks a photo and sends it to the scanner function |
 
 **Database tables** (full definitions in [`supabase/schema.sql`](supabase/schema.sql))
 
@@ -191,7 +191,7 @@ There is no custom REST API. The app reads and writes through the Supabase clien
 
 | Method | Path | What it does |
 |---|---|---|
-| POST | `/functions/v1/scan-label` | Reads an ingredient label photo and matches it against my unsafe foods |
+| POST | `/functions/v1/scan-label` | Identifies the foods in a photo and matches them against my unsafe foods |
 
 It needs `Authorization: Bearer <Supabase access token>`, which `supabase.functions.invoke` sends automatically. The function looks up your unsafe foods itself, under your own login, so Row Level Security still applies, and it only returns matches for foods you've actually marked unsafe.
 
@@ -203,22 +203,28 @@ Request:
 Response:
 ```json
 {
-  "readable": true,
-  "ingredients": ["Wheat flour", "Peanut flour", "Salt"],
+  "recognized": true,
+  "foods": ["French macarons"],
   "matches": [
-    { "ingredient": "Peanut flour", "allergen": "Peanuts", "synonym": "Arachis hypogaea" }
+    {
+      "item": "French macarons",
+      "allergen": "Almonds",
+      "certainty": "likely",
+      "reason": "Macarons are usually made with almond flour"
+    }
   ],
-  "allergensChecked": ["Peanuts"]
+  "allergensChecked": ["Almonds"]
 }
 ```
 
 | Status | Meaning |
 |---|---|
-| **200** | Scan finished. `readable: false` if the photo wasn't a readable label. |
+| **200** | Scan finished. `recognized: false` if no food could be identified. `certainty` is `seen`, `likely` or `possible`. |
 | **400** | No image, or not a JPG / PNG / WebP |
 | **401** | Not logged in |
 | **413** | Image too large |
-| **503** | Gemini is busy, after 2 automatic retries and the optional fallback model |
+| **429** | Gemini's usage limit was reached (and the optional fallback model's, if set) |
+| **503** | Gemini is busy or too slow, after automatic retries and the optional fallback model |
 | **500 / 502** | The function or Gemini failed; the full error is in the function's logs |
 
 ## 5. Project structure
@@ -237,7 +243,7 @@ trialbites/
 ├── supabase/
 │   ├── schema.sql                tables and Row Level Security, run once on a new project
 │   ├── hardening.sql             adds the length rules to a database created before they existed
-│   └── functions/scan-label/     the Edge Function that sends label photos to Gemini
+│   └── functions/scan-label/     the Edge Function that sends food photos to Gemini
 ├── public/                       favicon.svg (tab icon), apple-touch-icon.png (phone home screen)
 ├── images_documentation/         the screenshots in section 6
 ├── index.html                    page title, tab icon, mounts the app at #root
@@ -260,13 +266,13 @@ trialbites/
 
 | Allergen Scanner |
 |---|
-| ![Scan results matching ingredients to unsafe foods](images_documentation/AllergenScanner.png) |
+| ![Scan results matching foods to unsafe foods](images_documentation/AllergenScanner.png) |
 
 ## 7. Known issues and next steps
 
 **Known issues**
 
-- **The scanner can be wrong.** Gemini can miss an ingredient or misread a blurry photo, and a missed allergen is a real safety risk. The app shows a disclaimer to verify results with a clinical team, but it is a helper, not a guarantee.
+- **The scanner can be wrong.** It works from what's visible, so it can't see hidden ingredients (a sauce, a filling, how something was cooked), and it can misidentify a food. A missed allergen is a real safety risk. The app shows a disclaimer to verify results with a clinical team, but it is a helper, not a guarantee.
 - **The scanner can be busy.** At peak times Gemini returns "high demand" errors. The function retries twice and can fall back to a second model, but scans can still fail.
 - **The scanner has no per-user limit.** Any logged-in user can scan as often as they like, and every scan uses the project's Gemini quota.
 - **Email confirmation is off**, because Supabase's built-in email sender is rate-limited. So anyone can sign up with an email address they don't own.
@@ -302,7 +308,7 @@ Built with AI assistance from Claude (Anthropic). Details: [AI-USAGE.md](AI-USAG
 |---|---|
 | [README.md](README.md) | Project summary, quick start, presentation and AI usage links |
 | [supabase/schema.sql](supabase/schema.sql) | The database tables and Row Level Security policies, with comments |
-| [supabase/functions/scan-label/index.ts](supabase/functions/scan-label/index.ts) | The label scanner, including the instructions sent to Gemini |
+| [supabase/functions/scan-label/index.ts](supabase/functions/scan-label/index.ts) | The food scanner, including the instructions sent to Gemini |
 | [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) | Completed security checklist |
 | [AI-USAGE.md](AI-USAGE.md) | How AI was used in this project |
 
@@ -310,4 +316,4 @@ Built with AI assistance from Claude (Anthropic). Details: [AI-USAGE.md](AI-USAG
 
 - **Font:** [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts (SIL Open Font License).
 - **Icons:** [Lucide](https://lucide.dev/) via `lucide-react` (ISC license). The logo and tab icon use Lucide's *shield-alert* icon.
-- **Label reading:** [Google Gemini API](https://ai.google.dev/).
+- **Food recognition:** [Google Gemini API](https://ai.google.dev/).

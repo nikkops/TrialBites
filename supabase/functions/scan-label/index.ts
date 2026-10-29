@@ -1,13 +1,16 @@
 // Supabase Edge Function: scan-label
 //
-// Receives a photo of an ingredient label from the app, looks up the logged-in
-// user's unsafe foods, and asks Gemini which ingredients match them.
+// Receives a photo of food from the app, looks up the logged-in user's unsafe
+// foods, and asks Gemini which foods in the photo are, or may contain, one of
+// them. (The slug is still "scan-label" from when it only read labels; a
+// readable package label in the photo is still used.)
 // It runs on Supabase's servers, so the Gemini API key never reaches the browser.
 //
 // Secrets it needs (Edge Functions -> Secrets in the Supabase dashboard):
 //   GEMINI_API_KEY  - your key from Google AI Studio
 //   GEMINI_MODEL    - optional, defaults to gemini-3.8-flash
 //   GEMINI_FALLBACK_MODEL - optional, tried once if the main model stays busy
+//                           or hits its usage limit (it has a separate limit)
 //   ALLOWED_ORIGINS - optional, comma-separated sites allowed to call this
 //                     function from a browser (defaults below)
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided by Supabase automatically.
@@ -53,106 +56,188 @@ function json(cors: Record<string, string>, body: unknown, status = 200) {
 const MAX_IMAGE_CHARS = 8_000_000
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
-// The JSON shape we ask Gemini to answer in
+// How sure Gemini is that an unsafe food is in the photo, strongest first
+const CERTAINTIES = ['seen', 'likely', 'possible']
+
+// The JSON shape we ask Gemini to answer in. Gemini fills the fields in
+// this order, so "recognized" comes last: it looks at the photo first and
+// only then judges whether it could identify anything.
 const resultSchema = {
   type: 'object',
   properties: {
-    readable: {
-      type: 'boolean',
-      description:
-        'false if the image is not an ingredient list or is too blurry to read',
-    },
-    ingredients: {
+    foods: {
       type: 'array',
       items: { type: 'string' },
-      description: 'Every ingredient on the label, as written',
+      description: 'The foods, dishes or products visible in the photo, most prominent first',
     },
     matches: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
-          ingredient: {
+          item: {
             type: 'string',
-            description: 'The ingredient exactly as written on the label',
+            description: 'The food in the photo that is or may contain the unsafe food',
           },
           allergen: {
             type: 'string',
-            description: "Which of the user's unsafe foods it matches",
+            description: "Which of the user's unsafe foods it is or may contain",
           },
-          synonym: {
+          certainty: {
+            type: 'string',
+            enum: CERTAINTIES,
+            description:
+              'seen = visible or named on a label in the photo; likely = this food usually contains it; possible = it sometimes contains it',
+          },
+          reason: {
             type: 'string',
             description:
-              'Short reason it matches, e.g. a scientific name or "derived from milk"',
+              'Short reason, e.g. "whole almonds are visible" or "macarons are usually made with almond flour"',
           },
         },
-        required: ['ingredient', 'allergen', 'synonym'],
+        required: ['item', 'allergen', 'certainty', 'reason'],
       },
     },
+    recognized: {
+      type: 'boolean',
+      description:
+        'true if you could identify any food in the photo; false if no food is visible or the photo is too unclear',
+    },
   },
-  required: ['readable', 'ingredients', 'matches'],
+  required: ['foods', 'matches', 'recognized'],
 }
 
-// Gemini statuses that mean "busy, try again soon" rather than "you did
-// something wrong": 429 too many requests, 500/503 overloaded, 504 timed out
-const BUSY_STATUSES = [429, 500, 503, 504]
+// Gemini statuses that mean "overloaded, try again soon": 500 internal,
+// 503 overloaded, 504 timed out.
+const OVERLOADED_STATUSES = [500, 503, 504]
+
+// How long one Gemini attempt may take. Supabase stops a function after
+// 150s, so two slow attempts (main + fallback) must fit inside that.
+const ATTEMPT_TIMEOUT_MS = 45_000
+
+// 429 means a usage limit was hit (per minute or per day). Retrying the same
+// model right away only uses up more of the limit, so we don't; we go straight
+// to GEMINI_FALLBACK_MODEL instead, which has its own separate limit.
+const QUOTA_STATUS = 429
 
 // Wait this long before each retry (1st retry after 1s, 2nd after 3s)
 const RETRY_DELAYS_MS = [1_000, 3_000]
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function callModel(model: string, apiKey: string, body: string) {
-  return fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body,
-      // Don't let one slow attempt hang forever
-      signal: AbortSignal.timeout(30_000),
-    },
-  )
+async function callModel(model: string, apiKey: string, body: string) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body,
+        // Don't let one slow attempt hang forever
+        signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
+      },
+    )
+    // Remember which model answered, for the log line after a scan
+    const headers = new Headers(response.headers)
+    headers.set('x-model-used', model)
+    return new Response(response.body, { status: response.status, headers })
+  } catch (error) {
+    // A timed-out attempt counts as "overloaded" (504). It is marked so
+    // askGemini doesn't retry the same slow model.
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      console.warn(`${model} timed out after ${ATTEMPT_TIMEOUT_MS / 1000}s`)
+      return new Response(null, { status: 504, headers: { 'x-timed-out': '1' } })
+    }
+    throw error
+  }
 }
 
-// Calls Gemini, retrying when it's busy. If the main model is still busy
-// after the retries, tries GEMINI_FALLBACK_MODEL once (if that secret is set).
-// Returns the last response, successful or not.
+// Calls Gemini, retrying when it's overloaded. If the main model is still
+// overloaded, or has hit its usage limit, tries GEMINI_FALLBACK_MODEL once
+// (if that secret is set). Returns the last response, successful or not.
 async function askGemini(apiKey: string, body: string) {
   const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash'
   const fallbackModel = Deno.env.get('GEMINI_FALLBACK_MODEL')
 
   let response = await callModel(model, apiKey, body)
   for (const delay of RETRY_DELAYS_MS) {
-    if (!BUSY_STATUSES.includes(response.status)) return response
-    console.warn(`Gemini busy (${response.status}), retrying in ${delay}ms`)
+    if (!OVERLOADED_STATUSES.includes(response.status)) break
+    // A timeout already used up its time; retrying the same model would
+    // likely be just as slow, so move on to the fallback instead
+    if (response.headers.get('x-timed-out')) break
+    console.warn(`${model} overloaded (${response.status}), retrying in ${delay}ms`)
     await response.body?.cancel() // we won't read this one
     await sleep(delay)
     response = await callModel(model, apiKey, body)
   }
 
-  if (fallbackModel && BUSY_STATUSES.includes(response.status)) {
-    console.warn(`${model} still busy, trying fallback ${fallbackModel}`)
+  const shouldFallBack =
+    response.status === QUOTA_STATUS || OVERLOADED_STATUSES.includes(response.status)
+  if (fallbackModel && shouldFallBack) {
+    console.warn(`${model} returned ${response.status}, trying fallback ${fallbackModel}`)
     await response.body?.cancel()
     response = await callModel(fallbackModel, apiKey, body)
   }
   return response
 }
 
+// Turns a failed Gemini response into a message for the app.
+// Gemini errors look like { error: { code, status, message } }.
+function explainGeminiError(status: number, bodyText: string) {
+  let googleStatus = ''
+  let googleMessage = ''
+  try {
+    const parsed = JSON.parse(bodyText)
+    googleStatus = parsed?.error?.status ?? ''
+    googleMessage = parsed?.error?.message ?? ''
+  } catch {
+    // Not JSON (e.g. our own 504 for a timeout); use the status code alone
+  }
+
+  if (status === QUOTA_STATUS) {
+    return {
+      status: 429,
+      error:
+        'The scanner has reached its Gemini usage limit. Try again later; daily limits reset at midnight Pacific time.',
+    }
+  }
+  if (OVERLOADED_STATUSES.includes(status)) {
+    return { status: 503, error: 'The scanner is busy right now. Wait a minute and try again.' }
+  }
+  if (status === 404) {
+    return {
+      status: 502,
+      error: 'The Gemini model set for the scanner was not found. Check the GEMINI_MODEL secret.',
+    }
+  }
+  if (
+    status === 401 ||
+    status === 403 ||
+    googleStatus === 'PERMISSION_DENIED' ||
+    /api key/i.test(googleMessage)
+  ) {
+    return {
+      status: 502,
+      error:
+        "The scanner's Gemini API key was rejected. Check GEMINI_API_KEY and the key's restrictions in Google AI Studio.",
+    }
+  }
+  return { status: 502, error: 'The scanner is unavailable right now. Try again later.' }
+}
+
 function buildPrompt(allergens: string[]) {
-  return `You are checking a photo of a food product's ingredient label for someone with food reactions.
+  return `You are looking at a photo of food for someone doing food elimination trials.
 
 Their unsafe foods are: ${allergens.join(', ')}.
 
-1. Read the ingredient list in the image. If the image is not an ingredient label, or it is too blurry to read, set "readable" to false and leave the lists empty.
-2. List every ingredient as written in "ingredients".
-3. In "matches", list each ingredient that is, contains, or is derived from one of the unsafe foods. Include:
-   - direct names and plural/singular forms
-   - scientific or botanical names (for example Arachis hypogaea for peanut, Prunus dulcis for almond)
-   - derivatives and processed forms (for example casein or whey for milk, albumin for egg)
-   - "may contain" or "processed in a facility with" warnings, using the warning text as the ingredient
-   For "allergen", use the unsafe food's name exactly as given above.
-Only report matches you can see on the label. Do not guess.`
+1. In "foods", list the foods, dishes or products you can see, most prominent first (for example "Whole almonds" or "Chocolate chip cookie"). If a package label or ingredient list is readable in the photo, use it too.
+2. In "matches", add an entry for each unsafe food that is or may be in what you see:
+   - "item": the food in the photo
+   - "allergen": the unsafe food's name exactly as given above
+   - "certainty": "seen" if you can see it directly or it is named on a label in the photo; "likely" if this kind of food usually contains it; "possible" if it sometimes contains it or is often made alongside it
+   - "reason": a short explanation, mentioning other forms it may be in (for example almond flour or marzipan for almond; butter, cheese or whey for milk)
+3. Set "recognized" to true if you could identify any food, or false if no food is visible or the photo is too unclear.
+Never say a food is safe. A photo cannot show every ingredient, so only report what you see or what such foods typically contain.`
 }
 
 Deno.serve(async (req) => {
@@ -174,7 +259,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '')
     const { data: userData, error: userError } = await supabase.auth.getUser(token)
     if (userError || !userData.user) {
-      return json(cors, { error: 'Please log in to scan labels.' }, 401)
+      return json(cors, { error: 'Please log in to use the scanner.' }, 401)
     }
 
     // 2. Check the request
@@ -189,6 +274,13 @@ Deno.serve(async (req) => {
       return json(cors, { error: 'That image is too large.' }, 413)
     }
 
+    // Confirms in the logs that a real JPEG/PNG/WebP arrived (JPEG base64
+    // starts with "/9j/", PNG with "iVBOR"). Logs only size and format.
+    console.log(
+      `Image received: ${mimeType}, ~${Math.round((image.length * 3) / 4 / 1024)} KB, ` +
+        `starts with ${image.slice(0, 5)}`,
+    )
+
     // 3. Their unsafe foods. RLS means this only returns their own trials.
     const { data: trials, error: trialsError } = await supabase
       .from('trials')
@@ -197,9 +289,10 @@ Deno.serve(async (req) => {
     if (trialsError) throw trialsError
 
     const allergens = [...new Set(trials.map((t) => t.food_name))]
+    console.log(`Checking against ${allergens.length} unsafe food(s)`)
     if (allergens.length === 0) {
       // Nothing to compare against, so don't spend a Gemini request
-      return json(cors, { readable: null, ingredients: [], matches: [], allergensChecked: [] })
+      return json(cors, { recognized: null, foods: [], matches: [], allergensChecked: [] })
     }
 
     // 4. Ask Gemini
@@ -218,6 +311,9 @@ Deno.serve(async (req) => {
       generationConfig: {
         responseMimeType: 'application/json',
         responseJsonSchema: resultSchema,
+        // Gemini 3 models think at "high" by default, which made scans
+        // take over 30s. Naming foods in a photo is simple; "low" is much faster.
+        thinkingConfig: { thinkingLevel: 'low' },
       },
     })
 
@@ -226,15 +322,10 @@ Deno.serve(async (req) => {
     if (!geminiResponse.ok) {
       // Log Gemini's full error for you (Edge Functions -> Logs),
       // but only send a short message to the browser
-      console.error('Gemini error', geminiResponse.status, await geminiResponse.text())
-      if (BUSY_STATUSES.includes(geminiResponse.status)) {
-        return json(
-          cors,
-          { error: 'The scanner is busy right now. Wait a minute and try again.' },
-          503,
-        )
-      }
-      return json(cors, { error: 'The label scanner is unavailable right now. Try again later.' }, 502)
+      const errorText = await geminiResponse.text()
+      console.error('Gemini error', geminiResponse.status, errorText)
+      const { status, error } = explainGeminiError(geminiResponse.status, errorText)
+      return json(cors, { error }, status)
     }
 
     const geminiData = await geminiResponse.json()
@@ -247,19 +338,37 @@ Deno.serve(async (req) => {
     const parsed = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ''))
 
     // 5. Only keep matches for foods the user actually marked unsafe,
-    //    spelled the way they wrote them
+    //    spelled the way they wrote them, strongest certainty first
+    type RawMatch = { item?: unknown; allergen?: unknown; certainty?: unknown; reason?: unknown }
     const byLowerName = new Map(allergens.map((name) => [name.toLowerCase(), name]))
     const matches = (Array.isArray(parsed.matches) ? parsed.matches : [])
-      .filter((m: { allergen?: string }) => byLowerName.has(String(m.allergen).toLowerCase()))
-      .map((m: { ingredient: string; allergen: string; synonym?: string }) => ({
-        ingredient: String(m.ingredient),
-        allergen: byLowerName.get(m.allergen.toLowerCase()),
-        synonym: m.synonym ? String(m.synonym) : '',
+      .filter((m: RawMatch) => byLowerName.has(String(m.allergen).toLowerCase()))
+      .map((m: RawMatch) => ({
+        item: String(m.item ?? ''),
+        allergen: byLowerName.get(String(m.allergen).toLowerCase()),
+        // Anything unexpected is treated as the weakest level, not dropped
+        certainty: CERTAINTIES.includes(String(m.certainty)) ? String(m.certainty) : 'possible',
+        reason: m.reason ? String(m.reason) : '',
       }))
+      .sort(
+        (a: { certainty: string }, b: { certainty: string }) =>
+          CERTAINTIES.indexOf(a.certainty) - CERTAINTIES.indexOf(b.certainty),
+      )
+
+    const foods: string[] = Array.isArray(parsed.foods) ? parsed.foods.map(String) : []
+
+    // A short summary in the logs, so a "couldn't recognize" result can be
+    // told apart from a model problem. No photo contents are logged.
+    console.log(
+      `Scan done by ${geminiResponse.headers.get('x-model-used')}: recognized=${parsed.recognized}, ` +
+        `${foods.length} foods, ${matches.length} matches`,
+    )
 
     return json(cors, {
-      readable: parsed.readable !== false,
-      ingredients: Array.isArray(parsed.ingredients) ? parsed.ingredients.map(String) : [],
+      // If the model named any foods, it did recognize something, even if
+      // it also said "not recognized" (e.g. part of the photo was blurry)
+      recognized: parsed.recognized !== false || foods.length > 0,
+      foods,
       matches,
       allergensChecked: allergens,
     })

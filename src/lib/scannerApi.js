@@ -1,13 +1,13 @@
 /*
  * scannerApi.js
- * Sends an ingredient label photo to the "scan-label" Edge Function,
- * which asks Gemini about it. Same rule as the other api files:
+ * Sends a food photo to the "scan-label" Edge Function, which asks Gemini
+ * which foods in it are, or may contain, one of the user's unsafe foods. Same rule as the other api files:
  * throws an Error with a readable message if anything fails.
  */
 import { supabase } from './supabase.js'
 
 // Phone photos are often 3-10 MB. Shrinking them first makes the upload
-// fast, and labels stay readable at this size.
+// fast, and food (and any label text) stays clear at this size.
 const MAX_SIDE = 1600
 
 /**
@@ -47,15 +47,16 @@ async function prepareImage(file) {
 }
 
 /**
- * Scan a label photo against the user's unsafe foods.
+ * Scan a food photo against the user's unsafe foods.
  * Returns: {
- *   readable,          false if Gemini couldn't find a readable ingredient list
- *   ingredients,       every ingredient it read
- *   matches,           [{ ingredient, allergen, synonym }]
+ *   recognized,        false if Gemini couldn't identify any food in the photo
+ *   foods,             the foods it identified, most prominent first
+ *   matches,           [{ item, allergen, certainty, reason }], strongest first;
+ *                      certainty is 'seen', 'likely' or 'possible'
  *   allergensChecked,  the unsafe foods it compared against
  * }
  */
-export async function scanLabel(file) {
+export async function scanFood(file) {
   const body = await prepareImage(file)
 
   // invoke() sends the logged-in user's token automatically

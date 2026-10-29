@@ -8,8 +8,15 @@ import {
   Sparkles,
 } from 'lucide-react'
 import PageHeader from '../components/PageHeader.jsx'
-import { scanLabel } from '../lib/scannerApi.js'
+import { scanFood } from '../lib/scannerApi.js'
 import './AllergenScanner.css'
+
+// How each certainty level is labeled and colored in the results
+const certaintyBadges = {
+  seen: { label: 'Seen', className: 'badge--danger' },
+  likely: { label: 'Likely', className: 'badge--danger' },
+  possible: { label: 'Possible', className: 'badge--warning' },
+}
 
 function AllergenScanner({ trials }) {
   const fileInputRef = useRef(null)
@@ -51,7 +58,7 @@ function AllergenScanner({ trials }) {
     if (allergens.length === 0) {
       setResult(null)
       setError(
-        "You haven't marked any foods as unsafe yet, so there's nothing to check this label against.",
+        "You haven't marked any foods as unsafe yet, so there's nothing to check this food against.",
       )
       return
     }
@@ -59,7 +66,7 @@ function AllergenScanner({ trials }) {
     setIsScanning(true)
     setError('')
     try {
-      setResult(await scanLabel(file))
+      setResult(await scanFood(file))
     } catch (scanError) {
       setResult(null)
       setError(scanError.message)
@@ -71,8 +78,8 @@ function AllergenScanner({ trials }) {
   return (
     <section className="scanner">
       <PageHeader
-        title="Allergen Ingredient Scanner"
-        subtitle="Scan product ingredient lists to check for reactive allergens matched against your logs."
+        title="Allergen Food Scanner"
+        subtitle="Photograph a food or meal to check it against the foods you've marked unsafe."
         trialModeActive={hasActiveTrial}
       />
 
@@ -84,7 +91,7 @@ function AllergenScanner({ trials }) {
               <img
                 className="upload__preview"
                 src={previewUrl}
-                alt="Selected ingredient label"
+                alt="Selected food photo"
               />
             ) : (
               <span className="upload__icon" aria-hidden="true">
@@ -92,11 +99,11 @@ function AllergenScanner({ trials }) {
               </span>
             )}
 
-            <h2>Upload Ingredient Label Image</h2>
+            <h2>Upload a Food Photo</h2>
             <p className="upload__text">
               {file
                 ? file.name
-                : 'Take a snapshot or select an image file to analyze.'}
+                : 'Take a photo of the food, or select an image file to analyze.'}
             </p>
 
             {/* Hidden real input; "Browse Files" opens it */}
@@ -132,10 +139,11 @@ function AllergenScanner({ trials }) {
           <div className="scanner-info">
             <Sparkles size={22} className="scanner-info__icon" />
             <div>
-              <p className="scanner-info__title">Gemini-powered Clinical OCR</p>
+              <p className="scanner-info__title">Gemini-powered Food Recognition</p>
               <p>
-                This analyzer uses Gemini computer vision models to identify
-                cross-reactive botanicals and masked clinical synonym names.
+                Gemini identifies the foods in your photo and flags any that
+                are, or usually contain, one of your unsafe foods. It can't see
+                hidden ingredients, so check the package label when there is one.
               </p>
             </div>
           </div>
@@ -148,15 +156,15 @@ function AllergenScanner({ trials }) {
             Matched against your reactive trial food logs
           </p>
 
-          {result && result.readable === false ? (
+          {result && result.recognized === false ? (
             <>
               <p className="results__alert results__alert--warning">
                 <CircleAlert size={18} />
-                Couldn't Read an Ingredient List
+                Couldn't Recognize the Food
               </p>
               <p className="results__hint">
-                Try a closer, well-lit photo with the whole ingredient list in
-                view.
+                Try a closer, well-lit photo with the food filling most of the
+                frame.
               </p>
             </>
           ) : result ? (
@@ -164,35 +172,43 @@ function AllergenScanner({ trials }) {
               {result.matches.length > 0 ? (
                 <p className="results__alert results__alert--danger">
                   <CircleX size={18} />
-                  {result.matches.length} Reactive Allergen
-                  {result.matches.length === 1 ? '' : 's'} Detected
+                  {result.matches.length} Possible Unsafe Food
+                  {result.matches.length === 1 ? '' : 's'} Found
                 </p>
               ) : (
-                <p className="results__alert results__alert--safe">
-                  <CircleCheck size={18} />
-                  No Reactive Allergens Detected
-                </p>
+                <>
+                  <p className="results__alert results__alert--safe">
+                    <CircleCheck size={18} />
+                    None of Your Unsafe Foods Spotted
+                  </p>
+                  <p className="results__hint">
+                    A photo can't show hidden ingredients. Check the package
+                    label or ask how it was made before eating it.
+                  </p>
+                </>
               )}
 
               {result.matches.length > 0 && (
                 <>
-                  <h3 className="results__heading">
-                    Identified Ingredient Matches
-                  </h3>
+                  <h3 className="results__heading">Possible Matches</h3>
                   <ul className="matches">
-                    {result.matches.map((match, index) => (
-                      <li key={`${match.ingredient}-${index}`} className="match">
-                        <div>
-                          <p className="match__name">“{match.ingredient}”</p>
-                          {match.synonym && (
-                            <p className="match__synonym">{match.synonym}</p>
-                          )}
-                        </div>
-                        <span className="badge badge--danger">
-                          Match: {match.allergen}
-                        </span>
-                      </li>
-                    ))}
+                    {result.matches.map((match, index) => {
+                      const badge =
+                        certaintyBadges[match.certainty] ?? certaintyBadges.possible
+                      return (
+                        <li key={`${match.item}-${index}`} className="match">
+                          <div>
+                            <p className="match__name">{match.item}</p>
+                            {match.reason && (
+                              <p className="match__synonym">{match.reason}</p>
+                            )}
+                          </div>
+                          <span className={`badge ${badge.className}`}>
+                            {badge.label}: {match.allergen}
+                          </span>
+                        </li>
+                      )
+                    })}
                   </ul>
                 </>
               )}
@@ -206,12 +222,10 @@ function AllergenScanner({ trials }) {
                 ))}
               </div>
 
-              {result.ingredients.length > 0 && (
+              {result.foods.length > 0 && (
                 <details className="ingredients">
-                  <summary>
-                    All ingredients read ({result.ingredients.length})
-                  </summary>
-                  <p>{result.ingredients.join(', ')}</p>
+                  <summary>Foods identified ({result.foods.length})</summary>
+                  <p>{result.foods.join(', ')}</p>
                 </details>
               )}
             </>
@@ -220,7 +234,7 @@ function AllergenScanner({ trials }) {
               {error ? (
                 <p className="results__error">{error}</p>
               ) : (
-                <p>Upload a label and press Scan &amp; Analyze to see matches.</p>
+                <p>Upload a food photo and press Scan &amp; Analyze to see matches.</p>
               )}
 
               <h3 className="results__heading">Watching for</h3>

@@ -8,23 +8,23 @@ web
 
 ## Users
 
-Adults tracking their own single-food elimination or reintroduction trials, usually following a plan from a doctor, allergist, or dietitian. They are testing one food at a time, need to remember what happened each day after eating it, and need a clear record of which foods are safe and which are not. Use happens on both phone and desktop, and both must work fully: logging a reaction after a meal or scanning a label in a store on the phone, and sitting down to review history on a larger screen.
+Adults tracking their own single-food elimination or reintroduction trials, usually following a plan from a doctor, allergist, or dietitian. They are testing one food at a time, need to remember what happened each day after eating it, and need a clear record of which foods are safe and which are not. Use happens on both phone and desktop, and both must work fully: logging a reaction after a meal or photographing a food before eating it on the phone, and sitting down to review history on a larger screen.
 
 ## Product Purpose
 
-TrialBites replaces notes scattered across a phone with one private place per person to run food trials: start a trial for one food, log reactions day by day, give a final safe or unsafe verdict, and keep a searchable history. It then puts that history to work: unsafe foods are surfaced as warnings, and an ingredient-label scanner flags label ingredients that match them.
+TrialBites replaces notes scattered across a phone with one private place per person to run food trials: start a trial for one food, log reactions day by day, give a final safe or unsafe verdict, and keep a searchable history. It then puts that history to work: unsafe foods are surfaced as warnings, and a food-photo scanner flags foods in a photo that are, or usually contain, one of them.
 
 Success: a user can always answer "what did I try, what happened, and is this food safe for me?" in seconds, and can check a packaged food against their own unsafe list before eating it.
 
 ## Positioning
 
-The scanner checks labels against the user's own trial verdicts, not a generic allergen list. Because those verdicts come from the user's logged trials, the app links the record of each trial to what they can safely buy, and it catches hidden or scientific ingredient names (for example *Arachis hypogaea* for peanut, "derived from milk", "may contain" warnings).
+The scanner checks a photo of food against the user's own trial verdicts, not a generic allergen list. Because those verdicts come from the user's logged trials, the app links the record of each trial to what they're about to eat. It names what it sees and rates each match as **seen**, **likely** (the dish usually contains it, e.g. almond flour in macarons) or **possible**, and reads a package label if one is in the photo. It never declares a food safe, because a photo can't show hidden ingredients.
 
 ## Operating Context
 
 - Trial lifecycle: start a trial (food + start date) → log reactions per day with severity **None / Mild / Moderate / Severe** (stored 0 / 2 / 5 / 8 on a 0–10 scale) and notes → verdict **Mark as Safe** or **Mark as Unsafe (Allergen)**, with the verdict date saved.
 - Active trial states shown on the Dashboard: **Baseline** (nothing logged), **Under Watch** (at least one reaction), **No Reactions** (only "None" entries).
-- Surfaces: Auth (sign up, log in, password reset), Dashboard (active trials, the **Clinical Allergen Shield** warning listing unsafe foods), Trial Tracker (day-by-day timeline), Food Log (search plus filters In Progress / Safe Only / Unsafe (Allergens)), Allergen Scanner (upload or take a photo → Scan & Analyze → matches with reasons, plus every ingredient read).
+- Surfaces: Auth (sign up, log in, password reset), Dashboard (active trials, the **Clinical Allergen Shield** warning listing unsafe foods), Trial Tracker (day-by-day timeline), Food Log (search plus filters In Progress / Safe Only / Unsafe (Allergens)), Allergen Scanner (upload or take a photo of food → Scan & Analyze → matches with certainty and reasons, plus every food identified).
 - Each user's data is private to them (Supabase Row Level Security).
 
 ## Capabilities and Constraints

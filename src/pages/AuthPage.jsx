@@ -23,7 +23,7 @@ import './AuthPage.css'
 const features = [
   { icon: Activity, text: 'Track one new food at a time, day by day' },
   { icon: BookOpen, text: 'Keep a history of every safe and unsafe food' },
-  { icon: ScanLine, text: 'Check ingredient labels against your allergens' },
+  { icon: ScanLine, text: 'Check a photo of food against your unsafe foods' },
 ]
 
 const headings = {
